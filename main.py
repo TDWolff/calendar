@@ -359,6 +359,25 @@ def update_event(event_id):
     except _ValidationError as ve:
         return jsonify({'error': ve.message, **({'code': ve.code} if ve.code else {})}), 400
 
+    # Re-validate session overlap when status or schedule fields change
+    if any(field in parsed for field in {'status', 'date', 'end_date', 'all_day', 'start_time', 'end_time'}):
+        new_status = parsed.get('status', evt.status)
+        new_date = parsed.get('date', evt.date)
+        new_end_date = parsed.get('end_date', evt.end_date)
+        new_all_day = parsed.get('all_day', evt.all_day)
+        new_start_time = parsed.get('start_time', evt.start_time)
+        new_end_time = parsed.get('end_time', evt.end_time)
+        
+        if new_status in CONFLICTING_STATUSES:
+            start_dt, end_dt = _compute_dt_range(new_date, new_end_date, new_all_day, new_start_time, new_end_time)
+            if _has_session_overlapping_dt(start_dt, end_dt, exclude_id=evt.id):
+                existing_reasoning = parsed.get('reasoning', evt.reasoning or '')
+                if not existing_reasoning.strip():
+                    return jsonify({
+                        'error': 'A session is set for this day — thou must provide a reasoning.',
+                        'code': 'reasoning_required',
+                    }), 400
+
     for field, value in parsed.items():
         setattr(evt, field, value)
 
