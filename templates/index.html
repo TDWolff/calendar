@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="calendar-frame">
+    <div class="legend" aria-label="Status legend">
+        <span class="legend-item"><span class="dot dot-session"></span>Session</span>
+        <span class="legend-item"><span class="dot dot-busy"></span>Busy</span>
+        <span class="legend-item"><span class="dot dot-tentative"></span>Tentative</span>
+        <span class="legend-item"><span class="dot dot-available"></span>Available</span>
+    </div>
+    <div id="calendar"></div>
+</section>
+
+<!-- ============================================
+     Day view modal — opens when a day is clicked
+     ============================================ -->
+<div id="day-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="day-modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+        <h2 id="day-modal-title" class="modal-title">The Day's Entries</h2>
+        <div class="modal-date" id="day-modal-date"></div>
+        <div id="day-event-list" class="day-event-list" aria-live="polite"></div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" data-close>Close</button>
+            <button type="button" class="btn-primary" id="day-add-btn">&#10010; New Entry</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================
+     Add / Edit event modal
+     ============================================ -->
+<div id="event-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="event-modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+        <h2 id="event-modal-title" class="modal-title">A New Entry in the Ledger</h2>
+        <div class="modal-date" id="event-modal-date"></div>
+        <form id="event-form" novalidate>
+            <input type="hidden" id="event-id" value="">
+
+            <label class="field">
+                <span class="field-label">Thy Name</span>
+                <input type="text" id="event-name" name="name" maxlength="80" autocomplete="off" required>
+            </label>
+
+            <label class="field">
+                <span class="field-label">What befalls this day?</span>
+                <input type="text" id="event-title" name="title" maxlength="200" autocomplete="off"
+                       placeholder="e.g. Session 12 &mdash; Dragon's Lair, DM prep, Out of town" required>
+            </label>
+
+            <div class="field datetime-fields">
+                <div class="datetime-header">
+                    <span class="field-label">When?</span>
+                    <label class="all-day-toggle">
+                        <input type="checkbox" id="event-all-day" checked>
+                        <span>All day</span>
+                    </label>
+                </div>
+                <div class="datetime-row">
+                    <div class="datetime-col">
+                        <span class="sub-label">From</span>
+                        <input type="date" id="event-start-date" required>
+                        <input type="time" id="event-start-time" class="time-input" disabled>
+                    </div>
+                    <div class="datetime-col">
+                        <span class="sub-label">To</span>
+                        <input type="date" id="event-end-date" required>
+                        <input type="time" id="event-end-time" class="time-input" disabled>
+                    </div>
+                </div>
+                <p class="field-hint" id="datetime-hint" hidden></p>
+            </div>
+
+            <label class="field">
+                <span class="field-label">Further details <em>(optional)</em></span>
+                <textarea id="event-description" name="description" maxlength="2000" rows="3"></textarea>
+            </label>
+
+            <div class="field field-reasoning" id="reasoning-field" hidden>
+                <label for="event-reasoning">
+                    <span class="field-label reasoning-label">&#9876; Reasoning <em>(a session is set this day &mdash; required)</em></span>
+                </label>
+                <textarea id="event-reasoning" name="reasoning" maxlength="2000" rows="3"
+                          placeholder="Why canst thou not attend the session?"></textarea>
+                <p class="field-hint">The party shall vote upon thy reason. A weak excuse may sway thee back to the table.</p>
+            </div>
+
+            <fieldset class="status-field">
+                <legend class="field-label">Standing</legend>
+                <label class="status-option status-session">
+                    <input type="radio" name="status" value="session">
+                    <span>&#9876; Session</span>
+                </label>
+                <label class="status-option status-busy">
+                    <input type="radio" name="status" value="busy" checked>
+                    <span>&#10006; Busy</span>
+                </label>
+                <label class="status-option status-tentative">
+                    <input type="radio" name="status" value="tentative">
+                    <span>&#10068; Tentative</span>
+                </label>
+                <label class="status-option status-available">
+                    <input type="radio" name="status" value="available">
+                    <span>&#10004; Available</span>
+                </label>
+            </fieldset>
+
+            <div class="modal-error" id="modal-error" hidden></div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" data-close>Cancel</button>
+                <button type="submit" class="btn-primary" id="event-submit-btn">Inscribe</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}
