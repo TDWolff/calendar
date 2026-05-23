@@ -3,7 +3,7 @@ services:
   web:
     build: .
     ports:
-      - "8086:8086"
+      - "8093:8093"
     network_mode: "host"  # Add this line
     volumes:
       - persistent_volume:/volumes
