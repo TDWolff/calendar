@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% set nav_section = 'auth' %}
+{% block title %}Sign In &mdash; The Party Ledger{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+    <div class="auth-card-inner">
+        <div class="auth-mark" aria-hidden="true">&#10070;</div>
+        <h1 class="auth-title">Welcome Back, Adventurer</h1>
+        <p class="auth-subtitle">Speak thy name and passphrase to enter the ledger.</p>
+
+        {% if error %}
+        <div class="modal-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" class="auth-form" novalidate>
+            <label class="field">
+                <span class="field-label">Name</span>
+                <input type="text" name="username" maxlength="40" autocomplete="username"
+                       autofocus required>
+            </label>
+
+            <label class="field">
+                <span class="field-label">Passphrase</span>
+                <input type="password" name="password" autocomplete="current-password" required>
+            </label>
+
+            <div class="modal-actions auth-actions">
+                <button type="submit" class="btn-primary">Enter</button>
+            </div>
+        </form>
+
+        <p class="auth-switch">
+            New to the realm?
+            <a href="{{ url_for('auth.signup') }}">Forge an account &rarr;</a>
+        </p>
+    </div>
+</section>
+{% endblock %}

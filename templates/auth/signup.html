@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% set nav_section = 'auth' %}
+{% block title %}Join the Party &mdash; The Party Ledger{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+    <div class="auth-card-inner">
+        <div class="auth-mark" aria-hidden="true">&#9876;</div>
+        <h1 class="auth-title">Forge a New Identity</h1>
+        <p class="auth-subtitle">Choose thy name and a passphrase to keep it secure.</p>
+
+        {% if error %}
+        <div class="modal-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" class="auth-form" novalidate>
+            <label class="field">
+                <span class="field-label">Name <em>(3-40 chars, letters/numbers/_/-)</em></span>
+                <input type="text" name="username" maxlength="40" autocomplete="username"
+                       autofocus required pattern="[A-Za-z0-9_\-]{3,40}">
+            </label>
+
+            <label class="field">
+                <span class="field-label">Passphrase <em>(at least 6 characters)</em></span>
+                <input type="password" name="password" autocomplete="new-password" minlength="6" required>
+            </label>
+
+            <label class="field">
+                <span class="field-label">Confirm Passphrase</span>
+                <input type="password" name="confirm" autocomplete="new-password" minlength="6" required>
+            </label>
+
+            <div class="modal-actions auth-actions">
+                <button type="submit" class="btn-primary">Join the Party</button>
+            </div>
+        </form>
+
+        <p class="auth-switch">
+            Already known to the realm?
+            <a href="{{ url_for('auth.login') }}">Sign in &rarr;</a>
+        </p>
+    </div>
+</section>
+{% endblock %}

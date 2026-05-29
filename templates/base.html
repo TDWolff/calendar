@@ -10,23 +10,22 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    {% include '_navbar.html' %}
+
     <div class="page">
-        <header class="site-header">
-            <div class="header-dice" aria-hidden="true">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <polygon points="50,5 95,30 95,70 50,95 5,70 5,30" fill="none" stroke="currentColor" stroke-width="3"/>
-                    <polygon points="50,5 95,30 50,55 5,30" fill="none" stroke="currentColor" stroke-width="2" opacity="0.6"/>
-                    <polygon points="5,30 50,55 50,95" fill="none" stroke="currentColor" stroke-width="2" opacity="0.6"/>
-                    <polygon points="95,30 50,55 50,95" fill="none" stroke="currentColor" stroke-width="2" opacity="0.6"/>
-                    <text x="50" y="42" text-anchor="middle" font-family="Cinzel, serif" font-size="22" font-weight="bold" fill="currentColor">20</text>
-                </svg>
-            </div>
-            <h1 class="site-title">The Party Ledger</h1>
-            <p class="site-subtitle">Mark thy days, fellow adventurer.</p>
-            <div class="filigree" aria-hidden="true">&#10070; &#9876; &#10070;</div>
-        </header>
+        {% block header %}{% endblock %}
 
         <main>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-stack">
+                    {% for category, msg in messages %}
+                        <div class="flash flash-{{ category }}">{{ msg }}</div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
             {% block content %}{% endblock %}
         </main>
 

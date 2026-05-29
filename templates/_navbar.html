@@ -1,0 +1,43 @@
+{% set nav_section = nav_section|default('calendar') %}
+<nav class="site-nav" aria-label="Primary">
+    <div class="site-nav-inner">
+        <a class="nav-brand" href="{{ url_for('calendar.index') }}">
+            <svg class="nav-brand-mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <polygon points="50,5 95,30 95,70 50,95 5,70 5,30" fill="none" stroke="currentColor" stroke-width="4"/>
+                <text x="50" y="62" text-anchor="middle" font-family="Cinzel, serif" font-size="34" font-weight="bold" fill="currentColor">20</text>
+            </svg>
+            <span class="nav-brand-text">The Party Ledger</span>
+        </a>
+
+        {% if current_user.is_authenticated %}
+        <ul class="nav-links">
+            <li>
+                <a href="{{ url_for('calendar.index') }}"
+                   class="nav-link {% if nav_section == 'calendar' %}is-active{% endif %}">
+                    <span class="nav-link-icon" aria-hidden="true">&#10070;</span>
+                    Calendar
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('dnd.index') }}"
+                   class="nav-link {% if nav_section == 'dnd' %}is-active{% endif %}">
+                    <span class="nav-link-icon" aria-hidden="true">&#9876;</span>
+                    D&amp;D
+                </a>
+            </li>
+        </ul>
+
+        <div class="nav-user">
+            <span class="nav-user-greeting">Hail, <strong>{{ current_user.username }}</strong></span>
+            <form action="{{ url_for('auth.logout') }}" method="post" class="nav-logout-form">
+                <button type="submit" class="nav-logout-btn">Log out</button>
+            </form>
+        </div>
+        {% else %}
+        <div class="nav-user">
+            <a href="{{ url_for('auth.login') }}" class="nav-link nav-link-ghost">Sign in</a>
+            <a href="{{ url_for('auth.signup') }}" class="nav-link nav-link-primary">Join the party</a>
+        </div>
+        {% endif %}
+    </div>
+</nav>
