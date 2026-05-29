@@ -36,16 +36,24 @@ def _event_dt_range(evt):
 
 
 def _check_ownership(evt, provided_token):
-    """Returns (is_owner, matched_by_token).
+    """Returns (allowed, should_claim).
 
-    Ownership matches if EITHER the event's user_id matches the logged-in user
-    OR the legacy creator_token in the request body matches the event's token.
-    The token path lets clients with pre-auth localStorage tokens keep editing
-    events they created before they had an account. `matched_by_token` lets the
-    caller passively claim the event (set user_id) so it migrates over time.
+    - allowed: whether the current user may mutate this event.
+    - should_claim: whether granting access should also set user_id to the
+      current user (so the event becomes theirs going forward).
+
+    Rules, in order:
+      1. Already owned by current user → allow, no claim.
+      2. Unowned (user_id IS NULL) → allow for anyone, claim on action. This is
+         the public-edit-then-claim path for legacy anonymous events.
+      3. Legacy creator_token match → allow + claim (lets a user whose browser
+         still has the pre-auth token claim events they originally made).
+      4. Otherwise → deny.
     """
     if evt.user_id is not None and evt.user_id == current_user.id:
         return True, False
+    if evt.user_id is None:
+        return True, True
     if provided_token and evt.creator_token and evt.creator_token == provided_token:
         return True, True
     return False, False
@@ -226,8 +234,8 @@ def update_event(event_id):
 
     data = request.get_json(silent=True) or {}
     provided_token = (data.get('creator_token') or '').strip()
-    is_owner, matched_by_token = _check_ownership(evt, provided_token)
-    if not is_owner:
+    allowed, should_claim = _check_ownership(evt, provided_token)
+    if not allowed:
         return jsonify({'error': 'Thou art not the creator of this entry.'}), 403
 
     try:
@@ -256,9 +264,9 @@ def update_event(event_id):
     for field, value in parsed.items():
         setattr(evt, field, value)
 
-    # Passive migration: claim the event for the logged-in user so future
-    # edits work without the legacy token.
-    if matched_by_token:
+    # Claim the event for the logged-in user (orphan or legacy-token path) so
+    # future edits go through the user_id check directly.
+    if should_claim:
         evt.user_id = current_user.id
 
     db.session.commit()
@@ -274,8 +282,8 @@ def delete_event(event_id):
 
     data = request.get_json(silent=True) or {}
     provided_token = (data.get('creator_token') or '').strip()
-    is_owner, _ = _check_ownership(evt, provided_token)
-    if not is_owner:
+    allowed, _ = _check_ownership(evt, provided_token)
+    if not allowed:
         return jsonify({'error': 'Thou art not the creator of this entry.'}), 403
 
     db.session.delete(evt)
