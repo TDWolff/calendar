@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_login import login_required, current_user
 
 from models import (
@@ -122,6 +122,46 @@ def campaign_detail(campaign_id):
         'dnd/campaign_detail.html',
         campaign=campaign, members=members, characters=characters, is_dm=is_dm,
     )
+
+
+@dnd_bp.route('/campaigns/<int:campaign_id>/state.json')
+@login_required
+def campaign_state(campaign_id):
+    """Lightweight JSON snapshot of a campaign's roster + characters for polling."""
+    campaign = db.session.get(Campaign, campaign_id)
+    if not campaign:
+        abort(404)
+    _ensure_membership(campaign)
+
+    members = (CampaignMember.query
+               .filter_by(campaign_id=campaign.id)
+               .order_by(CampaignMember.joined_at.asc())
+               .all())
+    characters = (Character.query
+                  .filter_by(campaign_id=campaign.id)
+                  .order_by(Character.created_at.asc())
+                  .all())
+    return jsonify({
+        'members': [
+            {
+                'user_id': m.user_id,
+                'username': m.user.username,
+                'is_dm': m.user_id == campaign.dm_user_id,
+            }
+            for m in members
+        ],
+        'characters': [
+            {
+                'id': c.id,
+                'name': c.name,
+                'level': c.level,
+                'race': c.race or '',
+                'character_class': c.character_class or '',
+                'player_username': c.user.username,
+            }
+            for c in characters
+        ],
+    })
 
 
 @dnd_bp.route('/campaigns/<int:campaign_id>/delete', methods=['POST'])

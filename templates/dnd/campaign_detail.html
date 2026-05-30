@@ -27,29 +27,31 @@
                    class="btn-primary">&#10010; New Character</a>
             </div>
 
-            {% if characters %}
-            <ul class="character-list">
-                {% for ch in characters %}
-                <li class="character-row">
-                    <a class="character-row-link" href="{{ url_for('dnd.character_view', character_id=ch.id) }}">
-                        <div class="character-row-name">{{ ch.name }}</div>
-                        <div class="character-row-sub">
-                            Level {{ ch.level }}
-                            {% if ch.race %}&middot; {{ ch.race }}{% endif %}
-                            {% if ch.character_class %}&middot; {{ ch.character_class }}{% endif %}
-                        </div>
-                        <div class="character-row-player">
-                            played by <strong>{{ ch.user.username }}</strong>
-                        </div>
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="dnd-placeholder-body" style="text-align: left;">
-                None hath taken up arms yet. Forge a character to begin.
-            </p>
-            {% endif %}
+            <div id="character-list-region">
+                {% if characters %}
+                <ul class="character-list" id="character-list">
+                    {% for ch in characters %}
+                    <li class="character-row">
+                        <a class="character-row-link" href="{{ url_for('dnd.character_view', character_id=ch.id) }}">
+                            <div class="character-row-name">{{ ch.name }}</div>
+                            <div class="character-row-sub">
+                                Level {{ ch.level }}
+                                {% if ch.race %}&middot; {{ ch.race }}{% endif %}
+                                {% if ch.character_class %}&middot; {{ ch.character_class }}{% endif %}
+                            </div>
+                            <div class="character-row-player">
+                                played by <strong>{{ ch.user.username }}</strong>
+                            </div>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="dnd-placeholder-body character-list-empty" style="text-align: left;">
+                    None hath taken up arms yet. Forge a character to begin.
+                </p>
+                {% endif %}
+            </div>
         </div>
 
         <aside class="campaign-detail-side">
@@ -63,7 +65,7 @@
 
             <div class="party-card">
                 <h3 class="side-heading">The Party</h3>
-                <ul class="party-list">
+                <ul class="party-list" id="party-list">
                     {% for m in members %}
                     <li class="party-member">
                         <span class="party-member-name">
@@ -93,18 +95,100 @@
 
 {% block scripts %}
 <script>
-document.querySelectorAll('.copy-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-        const code = btn.dataset.copy || '';
-        try {
-            await navigator.clipboard.writeText(code);
-            const original = btn.textContent;
-            btn.textContent = 'Copied!';
-            setTimeout(() => { btn.textContent = original; }, 1400);
-        } catch (e) {
-            btn.textContent = 'Press Ctrl+C';
-        }
+(function () {
+    'use strict';
+
+    // ---------- Copy join code ----------
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const code = btn.dataset.copy || '';
+            try {
+                await navigator.clipboard.writeText(code);
+                const original = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = original; }, 1400);
+            } catch (e) {
+                btn.textContent = 'Press Ctrl+C';
+            }
+        });
     });
-});
+
+    // ---------- Live refresh ----------
+    const CAMPAIGN_ID = {{ campaign.id }};
+    const POLL_MS = 5000;
+    const STATE_URL = `/dnd/campaigns/${CAMPAIGN_ID}/state.json`;
+    let lastSnapshot = '';
+
+    function escapeHtml(str) {
+        return String(str ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
+    function renderParty(members) {
+        const list = document.getElementById('party-list');
+        if (!list) return;
+        list.innerHTML = members.map(m => {
+            const icon = m.is_dm ? '&#9818;' : '&#10070;';
+            const role = m.is_dm ? '<span class="party-member-role">DM</span>' : '';
+            return `<li class="party-member">
+                <span class="party-member-name">${icon} ${escapeHtml(m.username)}</span>
+                ${role}
+            </li>`;
+        }).join('');
+    }
+
+    function renderCharacters(characters) {
+        const region = document.getElementById('character-list-region');
+        if (!region) return;
+
+        if (!characters.length) {
+            region.innerHTML = `<p class="dnd-placeholder-body character-list-empty" style="text-align: left;">
+                None hath taken up arms yet. Forge a character to begin.
+            </p>`;
+            return;
+        }
+
+        const rows = characters.map(c => {
+            const parts = [`Level ${c.level}`];
+            if (c.race) parts.push(escapeHtml(c.race));
+            if (c.character_class) parts.push(escapeHtml(c.character_class));
+            return `<li class="character-row">
+                <a class="character-row-link" href="/dnd/characters/${c.id}">
+                    <div class="character-row-name">${escapeHtml(c.name)}</div>
+                    <div class="character-row-sub">${parts.join(' &middot; ')}</div>
+                    <div class="character-row-player">played by <strong>${escapeHtml(c.player_username)}</strong></div>
+                </a>
+            </li>`;
+        }).join('');
+        region.innerHTML = `<ul class="character-list" id="character-list">${rows}</ul>`;
+    }
+
+    async function poll() {
+        if (document.hidden) return;
+        try {
+            const res = await fetch(STATE_URL, { headers: { 'Accept': 'application/json' } });
+            if (!res.ok) return;
+            const data = await res.json();
+            const snap = JSON.stringify(data);
+            if (snap === lastSnapshot) return;
+            lastSnapshot = snap;
+            renderParty(data.members);
+            renderCharacters(data.characters);
+        } catch (e) {
+            // network blip — try again next tick
+        }
+    }
+
+    // Seed lastSnapshot from the initial server render so we skip the first
+    // redundant DOM swap when nothing has changed.
+    poll();
+    setInterval(poll, POLL_MS);
+
+    // Refresh promptly when the tab is brought back to the foreground.
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) poll();
+    });
+})();
 </script>
 {% endblock %}
