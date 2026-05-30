@@ -1,3 +1,5 @@
+import json
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_login import login_required, current_user
 
@@ -64,6 +66,53 @@ RULESET_CONTENT = {
 def _ruleset_content(ruleset):
     """Returns {'races': [...], 'classes': [...]} or None for 'other'/unknown."""
     return RULESET_CONTENT.get(ruleset)
+
+
+# 5e ability scores. (column_name, short_label)
+ABILITIES = [
+    ('strength',     'STR'),
+    ('dexterity',    'DEX'),
+    ('constitution', 'CON'),
+    ('intelligence', 'INT'),
+    ('wisdom',       'WIS'),
+    ('charisma',     'CHA'),
+]
+ABILITY_SHORTS = [s for _, s in ABILITIES]
+
+# Standard 5e skills (same list in 5.5e). (key, label, ability_short)
+SKILLS = [
+    ('acrobatics',      'Acrobatics',      'DEX'),
+    ('animal_handling', 'Animal Handling', 'WIS'),
+    ('arcana',          'Arcana',          'INT'),
+    ('athletics',       'Athletics',       'STR'),
+    ('deception',       'Deception',       'CHA'),
+    ('history',         'History',         'INT'),
+    ('insight',         'Insight',         'WIS'),
+    ('intimidation',    'Intimidation',    'CHA'),
+    ('investigation',   'Investigation',   'INT'),
+    ('medicine',        'Medicine',        'WIS'),
+    ('nature',          'Nature',          'INT'),
+    ('perception',      'Perception',      'WIS'),
+    ('performance',     'Performance',     'CHA'),
+    ('persuasion',      'Persuasion',      'CHA'),
+    ('religion',        'Religion',        'INT'),
+    ('sleight_of_hand', 'Sleight of Hand', 'DEX'),
+    ('stealth',         'Stealth',         'DEX'),
+    ('survival',        'Survival',        'WIS'),
+]
+SKILL_KEYS = [k for k, _, _ in SKILLS]
+
+
+def _can_view_character(character):
+    """Owner OR campaign DM may see the sheet."""
+    return (character.user_id == current_user.id
+            or character.campaign.dm_user_id == current_user.id)
+
+
+def _can_edit_character(character):
+    """Only the owner, and only while the campaign is not marked ready."""
+    return (character.user_id == current_user.id
+            and not character.campaign.is_ready)
 
 
 def _parse_optional_level(raw, field_label):
@@ -248,10 +297,32 @@ def campaign_state(campaign_id):
                 'race': c.race or '',
                 'character_class': c.character_class or '',
                 'player_username': c.user.username,
+                # Owner + DM may click through; others see the row only.
+                'viewable_by_me': (c.user_id == current_user.id
+                                   or campaign.dm_user_id == current_user.id),
             }
             for c in characters
         ],
     })
+
+
+@dnd_bp.route('/campaigns/<int:campaign_id>/ready', methods=['POST'])
+@login_required
+def campaign_toggle_ready(campaign_id):
+    """DM-only toggle that locks/unlocks character sheet edits."""
+    campaign = db.session.get(Campaign, campaign_id)
+    if not campaign:
+        abort(404)
+    if campaign.dm_user_id != current_user.id:
+        abort(403)
+    campaign.is_ready = not campaign.is_ready
+    db.session.commit()
+    flash(
+        'Sheets are locked. The campaign hath begun.' if campaign.is_ready
+        else 'Sheets are unlocked for editing.',
+        'info',
+    )
+    return redirect(url_for('dnd.campaign_detail', campaign_id=campaign.id))
 
 
 @dnd_bp.route('/campaigns/<int:campaign_id>/delete', methods=['POST'])
@@ -336,20 +407,131 @@ def character_new(campaign_id):
     )
 
 
-@dnd_bp.route('/characters/<int:character_id>')
+def _clamp_int(raw, lo, hi, default):
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return max(lo, min(hi, n))
+
+
+def _parse_lines(raw):
+    """Split a textarea value into a deduped list of non-empty trimmed lines."""
+    if not raw:
+        return []
+    seen, out = set(), []
+    for line in raw.replace('\r', '').split('\n'):
+        line = line.strip()
+        if line and line not in seen:
+            seen.add(line)
+            out.append(line)
+    return out
+
+
+def _checked_in(form, name):
+    """Form fields with name=X yield a list; True if anything was checked."""
+    return name in form
+
+
+@dnd_bp.route('/characters/<int:character_id>', methods=['GET', 'POST'])
 @login_required
 def character_view(character_id):
     character = db.session.get(Character, character_id)
     if not character:
         abort(404)
     _ensure_membership(character.campaign)
+    if not _can_view_character(character):
+        abort(403)
+
     is_mine = character.user_id == current_user.id
     is_dm = character.campaign.dm_user_id == current_user.id
+    editable = _can_edit_character(character)
+
+    if request.method == 'POST':
+        if not editable:
+            abort(403)
+        form = request.form
+        _apply_sheet_v1_update(character, form)
+        db.session.commit()
+        flash('Thy sheet hath been inscribed.', 'success')
+        return redirect(url_for('dnd.character_view', character_id=character.id))
+
     return render_template(
-        'dnd/character_view.html',
+        'dnd/character_sheet.html',
         character=character, campaign=character.campaign,
-        is_mine=is_mine, is_dm=is_dm,
+        is_mine=is_mine, is_dm=is_dm, editable=editable,
+        abilities=ABILITIES, skills=SKILLS, ability_shorts=ABILITY_SHORTS,
+        save_profs=set(character.get_list('save_proficiencies')),
+        skill_profs=set(character.get_list('skill_proficiencies')),
+        skill_experts=set(character.get_list('skill_expertise')),
+        languages=character.get_list('languages'),
+        tool_profs=character.get_list('tool_proficiencies'),
+        armor_profs=character.get_list('armor_proficiencies'),
+        weapon_profs=character.get_list('weapon_proficiencies'),
+        death_saves=character.get_map('death_saves') or {'successes': 0, 'failures': 0},
     )
+
+
+def _apply_sheet_v1_update(character, form):
+    """Pull every Sheet v1 field out of the submitted form and write to the
+    character. Field validation is permissive — we clamp to sensible bounds
+    rather than reject, so a typo doesn't lose the rest of the save."""
+
+    # --- Identity
+    character.name = (form.get('name') or character.name).strip()[:120]
+    character.race = (form.get('race') or '').strip()[:80]
+    character.subrace = (form.get('subrace') or '').strip()[:80]
+    character.character_class = (form.get('character_class') or '').strip()[:80]
+    character.subclass = (form.get('subclass') or '').strip()[:80]
+    character.background = (form.get('background') or '').strip()[:80]
+    character.alignment = (form.get('alignment') or '').strip()[:40]
+    character.level = _clamp_int(form.get('level'), 1, 20, character.level or 1)
+    character.experience_points = _clamp_int(form.get('experience_points'), 0, 1_000_000, 0)
+
+    # --- Abilities
+    for col, _ in ABILITIES:
+        setattr(character, col, _clamp_int(form.get(col), 1, 30, getattr(character, col) or 10))
+
+    # --- Combat
+    character.max_hp     = _clamp_int(form.get('max_hp'), 0, 999, character.max_hp or 0)
+    character.current_hp = _clamp_int(form.get('current_hp'), -99, character.max_hp, character.current_hp or 0)
+    character.temp_hp    = _clamp_int(form.get('temp_hp'), 0, 999, 0)
+    character.armor_class      = _clamp_int(form.get('armor_class'), 0, 40, character.armor_class or 10)
+    character.initiative_bonus = _clamp_int(form.get('initiative_bonus'), -10, 30, character.initiative_bonus or 0)
+    character.speed            = _clamp_int(form.get('speed'), 0, 200, character.speed or 30)
+
+    # Proficiency bonus: auto from level if the user didn't override.
+    pb_override = (form.get('proficiency_bonus') or '').strip()
+    if pb_override == '' or form.get('proficiency_bonus_auto') == 'on':
+        character.proficiency_bonus = character.proficiency_bonus_from_level
+    else:
+        character.proficiency_bonus = _clamp_int(pb_override, 1, 12, character.proficiency_bonus_from_level)
+
+    character.hit_dice      = (form.get('hit_dice') or character.hit_dice or '').strip()[:40]
+    character.hit_dice_used = _clamp_int(form.get('hit_dice_used'), 0, 40, 0)
+
+    # Death saves (3 checkboxes each)
+    succ = sum(1 for i in (1, 2, 3) if f'death_success_{i}' in form)
+    fail = sum(1 for i in (1, 2, 3) if f'death_failure_{i}' in form)
+    character.death_saves_json = json.dumps({'successes': succ, 'failures': fail})
+
+    # --- Saving throw proficiencies (checkboxes named save_prof_STR etc.)
+    save_profs = [s for s in ABILITY_SHORTS if f'save_prof_{s}' in form]
+    character.set_list('save_proficiencies', save_profs)
+
+    # --- Skills: proficiency + expertise checkboxes
+    skill_profs    = [k for k in SKILL_KEYS if f'skill_prof_{k}' in form]
+    skill_experts  = [k for k in SKILL_KEYS if f'skill_expert_{k}' in form]
+    # Expertise without proficiency is nonsensical — drop it.
+    skill_experts = [k for k in skill_experts if k in skill_profs]
+    character.set_list('skill_proficiencies', skill_profs)
+    character.set_list('skill_expertise', skill_experts)
+
+    # --- Lists (one per line in textareas)
+    character.set_list('languages',            _parse_lines(form.get('languages')))
+    character.set_list('tool_proficiencies',   _parse_lines(form.get('tool_proficiencies')))
+    character.set_list('armor_proficiencies',  _parse_lines(form.get('armor_proficiencies')))
+    character.set_list('weapon_proficiencies', _parse_lines(form.get('weapon_proficiencies')))
 
 
 @dnd_bp.route('/characters/<int:character_id>/delete', methods=['POST'])

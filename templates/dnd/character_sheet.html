@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+{% set nav_section = 'dnd' %}
+{% block title %}{{ character.name }} &mdash; The Party Ledger{% endblock %}
+
+{# ------------------------------------------------------------------ macros #}
+{% macro ability_mod(score) -%}
+    {%- set m = ((score|int) - 10) // 2 -%}
+    {%- if m >= 0 -%}+{{ m }}{%- else -%}{{ m }}{%- endif -%}
+{%- endmacro %}
+
+{% macro skill_total(skill_key, ability_short, character, skill_profs, skill_experts) -%}
+    {%- set ab = {'STR': character.strength, 'DEX': character.dexterity,
+                  'CON': character.constitution, 'INT': character.intelligence,
+                  'WIS': character.wisdom, 'CHA': character.charisma}[ability_short] -%}
+    {%- set mod = ((ab|int) - 10) // 2 -%}
+    {%- set pb = character.proficiency_bonus -%}
+    {%- set bonus = mod -%}
+    {%- if skill_key in skill_profs -%}{%- set bonus = bonus + pb -%}{%- endif -%}
+    {%- if skill_key in skill_experts -%}{%- set bonus = bonus + pb -%}{%- endif -%}
+    {%- if bonus >= 0 -%}+{{ bonus }}{%- else -%}{{ bonus }}{%- endif -%}
+{%- endmacro %}
+
+{% macro save_total(ability_short, character, save_profs) -%}
+    {%- set ab = {'STR': character.strength, 'DEX': character.dexterity,
+                  'CON': character.constitution, 'INT': character.intelligence,
+                  'WIS': character.wisdom, 'CHA': character.charisma}[ability_short] -%}
+    {%- set mod = ((ab|int) - 10) // 2 -%}
+    {%- set bonus = mod -%}
+    {%- if ability_short in save_profs -%}{%- set bonus = bonus + character.proficiency_bonus -%}{%- endif -%}
+    {%- if bonus >= 0 -%}+{{ bonus }}{%- else -%}{{ bonus }}{%- endif -%}
+{%- endmacro %}
+
+{% block header %}
+<header class="site-header campaign-header">
+    <div class="campaign-header-eyebrow">
+        <a href="{{ url_for('dnd.campaign_detail', campaign_id=campaign.id) }}" class="breadcrumb-back">
+            &larr; {{ campaign.name }}
+        </a>
+        <div class="campaign-constraints" style="margin: 0;">
+            <span class="constraint-badge">D&amp;D {{ character.ruleset }}</span>
+            {% if campaign.is_ready %}
+            <span class="constraint-badge constraint-badge-ready">&#128274; Locked</span>
+            {% elif not is_mine %}
+            <span class="constraint-badge constraint-badge-level">View Only</span>
+            {% else %}
+            <span class="constraint-badge constraint-badge-setup">Editable</span>
+            {% endif %}
+        </div>
+    </div>
+    <h1 class="site-title">{{ character.name }}</h1>
+    <p class="site-subtitle">
+        Level {{ character.level }}
+        {% if character.race %}&middot; {{ character.race }}{% endif %}
+        {% if character.character_class %}&middot; {{ character.character_class }}{% endif %}
+    </p>
+</header>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="sheet-form" novalidate>
+<div class="sheet">
+
+    {# ---------- side rail with section anchors ---------- #}
+    <aside class="sheet-rail">
+        <ul>
+            <li><a href="#sec-identity">Identity</a></li>
+            <li><a href="#sec-abilities">Abilities</a></li>
+            <li><a href="#sec-combat">Combat</a></li>
+            <li><a href="#sec-saves">Saves</a></li>
+            <li><a href="#sec-skills">Skills</a></li>
+            <li><a href="#sec-profs">Proficiencies</a></li>
+        </ul>
+        {% if editable %}
+        <button type="submit" class="btn-primary sheet-rail-save">
+            &#10070; Save Sheet
+        </button>
+        {% endif %}
+        {% if is_mine and not is_dm and campaign.is_ready %}
+        <p class="sheet-lock-hint">The DM hath locked the campaign. Ask them to unlock for edits.</p>
+        {% endif %}
+    </aside>
+
+    <div class="sheet-main">
+
+    {# ============================================================== IDENTITY #}
+    <section id="sec-identity" class="sheet-section">
+        <h2 class="sheet-section-title">Identity</h2>
+        <div class="sheet-grid two-col">
+            <label class="sheet-field">
+                <span class="sheet-label">Name</span>
+                <input type="text" name="name" value="{{ character.name }}" maxlength="120"
+                       {% if not editable %}readonly{% endif %}>
+            </label>
+            <label class="sheet-field">
+                <span class="sheet-label">Player</span>
+                <input type="text" value="{{ character.user.username }}" readonly>
+            </label>
+            <label class="sheet-field">
+                <span class="sheet-label">Race / Species</span>
+                <input type="text" name="race" value="{{ character.race }}" maxlength="80"
+                       {% if not editable %}readonly{% endif %}>
+            </label>
+            <label class="sheet-field">
+                <span class="sheet-label">Subrace</span>
+                <input type="text" name="subrace" value="{{ character.subrace }}" maxlength="80"
+                       {% if not editable %}readonly{% endif %}>
+            </label>
+            <label class="sheet-field">
+                <span class="sheet-label">Class</span>
+                <input type="text" name="character_class" value="{{ character.character_class }}" maxlength="80"
+                       {% if not editable %}readonly{% endif %}>
+            </label>
+            <label class="sheet-field">
+                <span class="sheet-label">Subclass</span>
+                <input type="text" name="subclass" value="{{ character.subclass }}" maxlength="80"
+                       {% if not editable %}readonly{% endif %}>
+            </label>
+            <label class="sheet-field">
+                <span class="sheet-label">Level</span>
+                <input type="number" name="level" value="{{ character.level }}" min="1" max="20"
+                       {% if not editable %}readonly{% endif %}>
+            </label>
+            <label class="sheet-field">
+                <span class="sheet-label">Experience</span>
+                <input type="number" name="experience_points" value="{{ character.experience_points }}" min="0"
+                       {% if not editable %}readonly{% endif %}>
+            </label>
+            <label class="sheet-field">
+                <span class="sheet-label">Background</span>
+                <input type="text" name="background" value="{{ character.background }}" maxlength="80"
+                       {% if not editable %}readonly{% endif %}>
+            </label>
+            <label class="sheet-field">
+                <span class="sheet-label">Alignment</span>
+                <input type="text" name="alignment" value="{{ character.alignment }}" maxlength="40"
+                       placeholder="e.g. Chaotic Good"
+                       {% if not editable %}readonly{% endif %}>
+            </label>
+        </div>
+    </section>
+
+    {# ============================================================ ABILITIES #}
+    <section id="sec-abilities" class="sheet-section">
+        <h2 class="sheet-section-title">Ability Scores</h2>
+        <div class="ability-grid">
+            {% for col, short in abilities %}
+            {% set score = character[col] %}
+            <div class="ability-card" data-ability="{{ short }}">
+                <div class="ability-short">{{ short }}</div>
+                <input type="number" name="{{ col }}" class="ability-score" min="1" max="30"
+                       value="{{ score }}"
+                       {% if not editable %}readonly{% endif %}>
+                <div class="ability-mod" data-mod-for="{{ col }}">{{ ability_mod(score) }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {# =============================================================== COMBAT #}
+    <section id="sec-combat" class="sheet-section">
+        <h2 class="sheet-section-title">Combat</h2>
+
+        <div class="combat-grid">
+            <div class="combat-card">
+                <span class="sheet-label">Armor Class</span>
+                <input type="number" name="armor_class" value="{{ character.armor_class }}" min="0" max="40"
+                       {% if not editable %}readonly{% endif %}>
+            </div>
+            <div class="combat-card">
+                <span class="sheet-label">Initiative</span>
+                <input type="number" name="initiative_bonus" value="{{ character.initiative_bonus }}" min="-10" max="30"
+                       {% if not editable %}readonly{% endif %}>
+            </div>
+            <div class="combat-card">
+                <span class="sheet-label">Speed (ft)</span>
+                <input type="number" name="speed" value="{{ character.speed }}" min="0" max="200"
+                       {% if not editable %}readonly{% endif %}>
+            </div>
+            <div class="combat-card">
+                <span class="sheet-label">Prof. Bonus</span>
+                <input type="number" name="proficiency_bonus" id="prof-bonus-input"
+                       value="{{ character.proficiency_bonus }}" min="1" max="12"
+                       {% if not editable %}readonly{% endif %}>
+                {% if editable %}
+                <label class="combat-card-auto">
+                    <input type="checkbox" name="proficiency_bonus_auto" id="prof-bonus-auto">
+                    auto from level
+                </label>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="hp-row">
+            <div class="hp-card">
+                <span class="sheet-label">Current HP</span>
+                <input type="number" name="current_hp" value="{{ character.current_hp }}" min="-99"
+                       {% if not editable %}readonly{% endif %}>
+            </div>
+            <div class="hp-card">
+                <span class="sheet-label">Max HP</span>
+                <input type="number" name="max_hp" value="{{ character.max_hp }}" min="0" max="999"
+                       {% if not editable %}readonly{% endif %}>
+            </div>
+            <div class="hp-card">
+                <span class="sheet-label">Temp HP</span>
+                <input type="number" name="temp_hp" value="{{ character.temp_hp }}" min="0" max="999"
+                       {% if not editable %}readonly{% endif %}>
+            </div>
+            <div class="hp-card">
+                <span class="sheet-label">Hit Dice</span>
+                <input type="text" name="hit_dice" value="{{ character.hit_dice }}" maxlength="40"
+                       placeholder="e.g. 5d8"
+                       {% if not editable %}readonly{% endif %}>
+                <div class="hit-dice-used">
+                    Used:
+                    <input type="number" name="hit_dice_used" value="{{ character.hit_dice_used }}"
+                           min="0" max="40" class="hit-dice-used-input"
+                           {% if not editable %}readonly{% endif %}>
+                </div>
+            </div>
+        </div>
+
+        <div class="death-saves">
+            <span class="sheet-label">Death Saves</span>
+            <div class="death-saves-row">
+                <span class="death-saves-row-label">Successes</span>
+                {% for i in [1, 2, 3] %}
+                <label class="death-pip death-pip-success">
+                    <input type="checkbox" name="death_success_{{ i }}"
+                           {% if death_saves.successes >= i %}checked{% endif %}
+                           {% if not editable %}disabled{% endif %}>
+                    <span></span>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="death-saves-row">
+                <span class="death-saves-row-label">Failures</span>
+                {% for i in [1, 2, 3] %}
+                <label class="death-pip death-pip-failure">
+                    <input type="checkbox" name="death_failure_{{ i }}"
+                           {% if death_saves.failures >= i %}checked{% endif %}
+                           {% if not editable %}disabled{% endif %}>
+                    <span></span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    {# ================================================================ SAVES #}
+    <section id="sec-saves" class="sheet-section">
+        <h2 class="sheet-section-title">Saving Throws</h2>
+        <ul class="save-list">
+            {% for col, short in abilities %}
+            <li class="save-row">
+                <label class="prof-checkbox" title="Proficient">
+                    <input type="checkbox" name="save_prof_{{ short }}"
+                           {% if short in save_profs %}checked{% endif %}
+                           {% if not editable %}disabled{% endif %}
+                           data-prof-for-save="{{ short }}">
+                    <span></span>
+                </label>
+                <span class="save-name">{{ short }}</span>
+                <span class="save-bonus" data-save-bonus-for="{{ short }}">
+                    {{ save_total(short, character, save_profs) }}
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    {# =============================================================== SKILLS #}
+    <section id="sec-skills" class="sheet-section">
+        <h2 class="sheet-section-title">Skills</h2>
+        <ul class="skill-list">
+            {% for key, label, ab in skills %}
+            <li class="skill-row">
+                <label class="prof-checkbox" title="Proficient">
+                    <input type="checkbox" name="skill_prof_{{ key }}"
+                           {% if key in skill_profs %}checked{% endif %}
+                           {% if not editable %}disabled{% endif %}
+                           data-prof-for-skill="{{ key }}">
+                    <span></span>
+                </label>
+                <label class="prof-checkbox prof-checkbox-expert" title="Expertise">
+                    <input type="checkbox" name="skill_expert_{{ key }}"
+                           {% if key in skill_experts %}checked{% endif %}
+                           {% if not editable %}disabled{% endif %}
+                           data-expert-for-skill="{{ key }}">
+                    <span></span>
+                </label>
+                <span class="skill-name">
+                    {{ label }} <span class="skill-ability">({{ ab }})</span>
+                </span>
+                <span class="skill-bonus" data-skill-bonus-for="{{ key }}" data-skill-ability="{{ ab }}">
+                    {{ skill_total(key, ab, character, skill_profs, skill_experts) }}
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    {# ========================================================= PROFICIENCIES #}
+    <section id="sec-profs" class="sheet-section">
+        <h2 class="sheet-section-title">Other Proficiencies &amp; Languages</h2>
+        <div class="sheet-grid two-col">
+            <label class="sheet-field">
+                <span class="sheet-label">Languages <em>(one per line)</em></span>
+                <textarea name="languages" rows="4" {% if not editable %}readonly{% endif %}
+                    >{{ languages | join('\n') }}</textarea>
+            </label>
+            <label class="sheet-field">
+                <span class="sheet-label">Tool Proficiencies</span>
+                <textarea name="tool_proficiencies" rows="4" {% if not editable %}readonly{% endif %}
+                    >{{ tool_profs | join('\n') }}</textarea>
+            </label>
+            <label class="sheet-field">
+                <span class="sheet-label">Armor Proficiencies</span>
+                <textarea name="armor_proficiencies" rows="3" {% if not editable %}readonly{% endif %}
+                    >{{ armor_profs | join('\n') }}</textarea>
+            </label>
+            <label class="sheet-field">
+                <span class="sheet-label">Weapon Proficiencies</span>
+                <textarea name="weapon_proficiencies" rows="3" {% if not editable %}readonly{% endif %}
+                    >{{ weapon_profs | join('\n') }}</textarea>
+            </label>
+        </div>
+    </section>
+
+    {# ===================================================== ACTIONS / FOOTER #}
+    <div class="sheet-actions">
+        <a href="{{ url_for('dnd.campaign_detail', campaign_id=campaign.id) }}"
+           class="btn-secondary">&larr; Back to Campaign</a>
+        {% if editable %}
+        <button type="submit" class="btn-primary">Save Sheet</button>
+        {% endif %}
+        {% if (is_mine or is_dm) and not campaign.is_ready %}
+        <form method="post" action="{{ url_for('dnd.character_delete', character_id=character.id) }}"
+              onsubmit="return confirm('Truly remove {{ character.name }} from the ledger?');"
+              style="margin: 0;">
+            <button type="submit" class="btn-danger">Remove Character</button>
+        </form>
+        {% endif %}
+    </div>
+
+    </div>{# /sheet-main #}
+</div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    'use strict';
+
+    function abilityMod(score) {
+        const n = parseInt(score, 10);
+        if (isNaN(n)) return 0;
+        return Math.floor((n - 10) / 2);
+    }
+
+    function signed(n) {
+        return n >= 0 ? `+${n}` : `${n}`;
+    }
+
+    function profBonusFromLevel(level) {
+        const l = Math.max(1, Math.min(20, parseInt(level, 10) || 1));
+        return 2 + Math.floor((l - 1) / 4);
+    }
+
+    const ABILITY_COL_BY_SHORT = {
+        STR: 'strength', DEX: 'dexterity', CON: 'constitution',
+        INT: 'intelligence', WIS: 'wisdom', CHA: 'charisma',
+    };
+
+    function getProfBonus() {
+        return parseInt(document.querySelector('input[name="proficiency_bonus"]')?.value || '2', 10);
+    }
+
+    function getAbilityScore(short) {
+        const col = ABILITY_COL_BY_SHORT[short];
+        return parseInt(document.querySelector(`input[name="${col}"]`)?.value || '10', 10);
+    }
+
+    function recomputeAllDerived() {
+        const pb = getProfBonus();
+
+        // Ability mods (under each score)
+        document.querySelectorAll('.ability-mod').forEach(el => {
+            const col = el.dataset.modFor;
+            const input = document.querySelector(`input[name="${col}"]`);
+            if (input) el.textContent = signed(abilityMod(input.value));
+        });
+
+        // Saves
+        document.querySelectorAll('[data-save-bonus-for]').forEach(el => {
+            const short = el.dataset.saveBonusFor;
+            const mod = abilityMod(getAbilityScore(short));
+            const prof = document.querySelector(`[data-prof-for-save="${short}"]`)?.checked;
+            const bonus = mod + (prof ? pb : 0);
+            el.textContent = signed(bonus);
+        });
+
+        // Skills
+        document.querySelectorAll('[data-skill-bonus-for]').forEach(el => {
+            const key = el.dataset.skillBonusFor;
+            const ab = el.dataset.skillAbility;
+            const mod = abilityMod(getAbilityScore(ab));
+            const prof = document.querySelector(`[data-prof-for-skill="${key}"]`)?.checked;
+            const exp = document.querySelector(`[data-expert-for-skill="${key}"]`)?.checked;
+            let bonus = mod;
+            if (prof) bonus += pb;
+            if (exp) bonus += pb;
+            el.textContent = signed(bonus);
+        });
+    }
+
+    // Recompute when any input that affects derived values changes.
+    const triggers = [
+        'input[name="strength"]', 'input[name="dexterity"]', 'input[name="constitution"]',
+        'input[name="intelligence"]', 'input[name="wisdom"]', 'input[name="charisma"]',
+        'input[name="proficiency_bonus"]', 'input[name="level"]',
+        'input[data-prof-for-save]', 'input[data-prof-for-skill]', 'input[data-expert-for-skill]',
+    ];
+    triggers.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => {
+            el.addEventListener('input', recomputeAllDerived);
+            el.addEventListener('change', recomputeAllDerived);
+        });
+    });
+
+    // "auto from level" toggle for prof bonus
+    const autoCb = document.getElementById('prof-bonus-auto');
+    const pbInput = document.getElementById('prof-bonus-input');
+    const levelInput = document.querySelector('input[name="level"]');
+    if (autoCb && pbInput && levelInput) {
+        autoCb.addEventListener('change', () => {
+            if (autoCb.checked) {
+                pbInput.value = profBonusFromLevel(levelInput.value);
+                pbInput.readOnly = true;
+                recomputeAllDerived();
+            } else {
+                pbInput.readOnly = false;
+            }
+        });
+        levelInput.addEventListener('input', () => {
+            if (autoCb.checked) {
+                pbInput.value = profBonusFromLevel(levelInput.value);
+                recomputeAllDerived();
+            }
+        });
+    }
+
+    // Expertise without proficiency is nonsense — auto-uncheck.
+    document.querySelectorAll('input[data-prof-for-skill]').forEach(el => {
+        el.addEventListener('change', () => {
+            if (!el.checked) {
+                const key = el.dataset.profForSkill;
+                const exp = document.querySelector(`input[data-expert-for-skill="${key}"]`);
+                if (exp) exp.checked = false;
+            }
+            recomputeAllDerived();
+        });
+    });
+
+    // Initial computation on load (in case server values drifted from inputs).
+    recomputeAllDerived();
+})();
+</script>
+{% endblock %}

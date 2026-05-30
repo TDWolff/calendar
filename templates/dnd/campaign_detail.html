@@ -12,12 +12,17 @@
     {% if campaign.description %}
     <p class="site-subtitle">{{ campaign.description }}</p>
     {% endif %}
-    {% set level_label = campaign.starting_level_label %}
-    {% if level_label %}
     <div class="campaign-constraints" style="justify-content: center;">
+        {% set level_label = campaign.starting_level_label %}
+        {% if level_label %}
         <span class="constraint-badge constraint-badge-level">{{ level_label }}</span>
+        {% endif %}
+        {% if campaign.is_ready %}
+        <span class="constraint-badge constraint-badge-ready">&#9876; Campaign Live &mdash; Sheets Locked</span>
+        {% else %}
+        <span class="constraint-badge constraint-badge-setup">&#10070; In Setup &mdash; Sheets Editable</span>
+        {% endif %}
     </div>
-    {% endif %}
     <div class="filigree" aria-hidden="true">&#10070; &#9876; &#10070;</div>
 </header>
 {% endblock %}
@@ -37,6 +42,8 @@
                 {% if characters %}
                 <ul class="character-list" id="character-list">
                     {% for ch in characters %}
+                    {% set viewable = ch.user_id == current_user.id or is_dm %}
+                    {% if viewable %}
                     <li class="character-row">
                         <a class="character-row-link" href="{{ url_for('dnd.character_view', character_id=ch.id) }}">
                             <div class="character-row-name">{{ ch.name }}</div>
@@ -50,6 +57,22 @@
                             </div>
                         </a>
                     </li>
+                    {% else %}
+                    <li class="character-row character-row-private">
+                        <div class="character-row-link">
+                            <div class="character-row-name">{{ ch.name }}</div>
+                            <div class="character-row-sub">
+                                Level {{ ch.level }}
+                                {% if ch.race %}&middot; {{ ch.race }}{% endif %}
+                                {% if ch.character_class %}&middot; {{ ch.character_class }}{% endif %}
+                            </div>
+                            <div class="character-row-player">
+                                played by <strong>{{ ch.user.username }}</strong>
+                                <span class="lock-hint">&#128274; private</span>
+                            </div>
+                        </div>
+                    </li>
+                    {% endif %}
                     {% endfor %}
                 </ul>
                 {% else %}
@@ -87,6 +110,16 @@
             </div>
 
             {% if is_dm %}
+            <form method="post" action="{{ url_for('dnd.campaign_toggle_ready', campaign_id=campaign.id) }}"
+                  class="danger-form">
+                <button type="submit" class="btn-primary" style="width: 100%;">
+                    {% if campaign.is_ready %}
+                    Unlock Sheets &mdash; Allow Edits
+                    {% else %}
+                    Mark Campaign Ready &mdash; Lock Sheets
+                    {% endif %}
+                </button>
+            </form>
             <form method="post" action="{{ url_for('dnd.campaign_delete', campaign_id=campaign.id) }}"
                   onsubmit="return confirm('Truly disband &quot;{{ campaign.name }}&quot;? All characters within shall be lost.');"
                   class="danger-form">
@@ -159,12 +192,25 @@
             const parts = [`Level ${c.level}`];
             if (c.race) parts.push(escapeHtml(c.race));
             if (c.character_class) parts.push(escapeHtml(c.character_class));
-            return `<li class="character-row">
-                <a class="character-row-link" href="/dnd/characters/${c.id}">
+            const subtitle = parts.join(' &middot; ');
+            if (c.viewable_by_me) {
+                return `<li class="character-row">
+                    <a class="character-row-link" href="/dnd/characters/${c.id}">
+                        <div class="character-row-name">${escapeHtml(c.name)}</div>
+                        <div class="character-row-sub">${subtitle}</div>
+                        <div class="character-row-player">played by <strong>${escapeHtml(c.player_username)}</strong></div>
+                    </a>
+                </li>`;
+            }
+            return `<li class="character-row character-row-private">
+                <div class="character-row-link">
                     <div class="character-row-name">${escapeHtml(c.name)}</div>
-                    <div class="character-row-sub">${parts.join(' &middot; ')}</div>
-                    <div class="character-row-player">played by <strong>${escapeHtml(c.player_username)}</strong></div>
-                </a>
+                    <div class="character-row-sub">${subtitle}</div>
+                    <div class="character-row-player">
+                        played by <strong>${escapeHtml(c.player_username)}</strong>
+                        <span class="lock-hint">&#128274; private</span>
+                    </div>
+                </div>
             </li>`;
         }).join('');
         region.innerHTML = `<ul class="character-list" id="character-list">${rows}</ul>`;

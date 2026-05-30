@@ -1669,6 +1669,445 @@ body::before {
     border-color: var(--regal);
     background: rgba(91, 42, 130, 0.08);
 }
+.constraint-badge-ready {
+    color: var(--crimson-dark);
+    border-color: var(--crimson);
+    background: rgba(138, 28, 28, 0.1);
+}
+.constraint-badge-setup {
+    color: var(--forest-dark);
+    border-color: var(--forest);
+    background: rgba(58, 90, 42, 0.1);
+}
+
+/* Private (un-clickable) character row */
+.character-row-private { opacity: 0.85; cursor: default; }
+.character-row-private:hover { transform: none; box-shadow: none; }
+.character-row-private .character-row-link { cursor: default; }
+.lock-hint {
+    margin-left: 8px;
+    font-family: var(--font-heading);
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* ============================== CHARACTER SHEET ============================== */
+
+.sheet {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.sheet-rail {
+    position: sticky;
+    top: 16px;
+    background: rgba(255, 250, 230, 0.75);
+    border: 1px solid var(--border-dark);
+    border-radius: 4px;
+    padding: 14px 14px 18px;
+    box-shadow: var(--shadow-warm);
+}
+.sheet-rail ul {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.sheet-rail a {
+    display: block;
+    padding: 7px 10px;
+    font-family: var(--font-heading);
+    font-size: 0.84rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    border-radius: 0 2px 2px 0;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.sheet-rail a:hover {
+    background: rgba(176, 138, 62, 0.15);
+    border-left-color: var(--gold);
+    color: var(--crimson-dark);
+}
+.sheet-rail-save {
+    width: 100%;
+    padding: 10px 12px !important;
+    font-size: 0.82rem !important;
+}
+.sheet-lock-hint {
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    background: rgba(138, 28, 28, 0.06);
+    border-left: 3px solid var(--crimson);
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-size: 0.78rem;
+    color: var(--crimson-dark);
+    letter-spacing: 0.02em;
+}
+
+.sheet-main { min-width: 0; }
+
+.sheet-section {
+    background: rgba(255, 250, 230, 0.65);
+    border: 1px solid var(--border-dark);
+    border-left: 4px solid var(--gold);
+    border-radius: 4px;
+    padding: 20px 22px;
+    margin-bottom: 18px;
+    scroll-margin-top: 16px;
+    position: relative;
+}
+.sheet-section::before {
+    content: '';
+    position: absolute;
+    top: 6px; left: 6px;
+    width: 14px; height: 14px;
+    border-left: 1px solid var(--gold);
+    border-top: 1px solid var(--gold);
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.sheet-section-title {
+    font-family: var(--font-display);
+    color: var(--crimson-dark);
+    font-size: 1.3rem;
+    margin: 0 0 14px;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid rgba(60, 35, 10, 0.18);
+    padding-bottom: 8px;
+}
+
+.sheet-grid {
+    display: grid;
+    gap: 12px;
+}
+.sheet-grid.two-col {
+    grid-template-columns: 1fr 1fr;
+}
+
+.sheet-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+}
+
+.sheet-label {
+    font-family: var(--font-heading);
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    font-weight: 600;
+}
+.sheet-label em {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+}
+
+.sheet input[type="text"],
+.sheet input[type="number"],
+.sheet textarea {
+    background: rgba(255, 250, 230, 0.75);
+    border: 1px solid var(--border-dark);
+    border-radius: 3px;
+    padding: 8px 10px;
+    font-family: var(--font-body);
+    font-size: 0.96rem;
+    color: var(--ink);
+    width: 100%;
+}
+.sheet input:focus,
+.sheet textarea:focus {
+    outline: 2px solid var(--gold);
+    outline-offset: -1px;
+}
+.sheet input[readonly],
+.sheet textarea[readonly] {
+    background: rgba(217, 193, 146, 0.25);
+    color: var(--ink);
+    cursor: default;
+}
+
+/* ---------- abilities ---------- */
+
+.ability-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+}
+.ability-card {
+    background: rgba(255, 250, 230, 0.85);
+    border: 2px solid var(--border-dark);
+    border-radius: 5px;
+    padding: 10px 8px 8px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 2px 0 rgba(176, 138, 62, 0.4);
+}
+.ability-short {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+.ability-score {
+    font-family: var(--font-display) !important;
+    font-size: 1.8rem !important;
+    text-align: center !important;
+    padding: 4px !important;
+    color: var(--crimson-dark) !important;
+    background: rgba(255, 250, 230, 0.6) !important;
+    border-color: var(--border-dark) !important;
+}
+.ability-mod {
+    margin-top: 6px;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: var(--ink);
+    border-top: 1px solid rgba(60, 35, 10, 0.25);
+    padding-top: 5px;
+    background: rgba(176, 138, 62, 0.12);
+    border-radius: 2px;
+}
+
+/* ---------- combat ---------- */
+
+.combat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.combat-card,
+.hp-card {
+    background: rgba(255, 250, 230, 0.85);
+    border: 1px solid var(--border-dark);
+    border-radius: 4px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: stretch;
+}
+.combat-card input[type="number"],
+.hp-card input[type="number"],
+.hp-card input[type="text"] {
+    font-family: var(--font-display) !important;
+    font-size: 1.4rem !important;
+    text-align: center !important;
+    padding: 5px !important;
+    color: var(--crimson-dark) !important;
+}
+.hp-card input[type="text"] { font-size: 1.1rem !important; }
+.combat-card .sheet-label,
+.hp-card .sheet-label { text-align: center; }
+
+.combat-card-auto {
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+    cursor: pointer;
+}
+
+.hp-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.hit-dice-used {
+    margin-top: 4px;
+    text-align: center;
+    font-family: var(--font-heading);
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.hit-dice-used-input {
+    width: 50px !important;
+    font-size: 0.88rem !important;
+    padding: 3px 5px !important;
+    font-family: var(--font-body) !important;
+    text-align: center !important;
+    color: var(--ink) !important;
+}
+
+/* Death saves */
+.death-saves {
+    background: rgba(176, 138, 62, 0.08);
+    border: 1px dashed var(--border-dark);
+    border-radius: 4px;
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    column-gap: 14px;
+    row-gap: 6px;
+    align-items: center;
+}
+.death-saves > .sheet-label {
+    grid-row: 1 / 3;
+    align-self: center;
+}
+.death-saves-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.death-saves-row-label {
+    font-family: var(--font-heading);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    min-width: 76px;
+}
+
+.death-pip {
+    display: inline-block;
+    cursor: pointer;
+}
+.death-pip input { display: none; }
+.death-pip span {
+    display: block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border-dark);
+    background: rgba(255, 250, 230, 0.8);
+    transition: background 0.12s;
+}
+.death-pip-success input:checked ~ span { background: var(--forest); border-color: var(--forest-dark); }
+.death-pip-failure input:checked ~ span { background: var(--crimson); border-color: var(--crimson-dark); }
+.death-pip input:disabled ~ span { cursor: default; opacity: 0.7; }
+
+/* ---------- saves & skills (shared row styling) ---------- */
+
+.save-list,
+.skill-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+}
+.skill-list { grid-template-columns: 1fr 1fr; gap: 4px 18px; }
+
+.save-row,
+.skill-row {
+    display: grid;
+    grid-template-columns: 22px auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    background: rgba(255, 250, 230, 0.55);
+    border-radius: 2px;
+    transition: background 0.1s;
+}
+.save-row:hover,
+.skill-row:hover { background: rgba(176, 138, 62, 0.12); }
+
+.skill-row { grid-template-columns: 22px 22px 1fr auto; }
+
+.save-name,
+.skill-name {
+    font-family: var(--font-heading);
+    font-size: 0.92rem;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+}
+.skill-ability {
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-left: 4px;
+}
+
+.save-bonus,
+.skill-bonus {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: var(--crimson-dark);
+    min-width: 32px;
+    text-align: right;
+    padding: 0 4px;
+}
+
+/* Custom proficiency checkboxes (filled circle = prof, smaller filled = expert) */
+.prof-checkbox {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    position: relative;
+}
+.prof-checkbox input { display: none; }
+.prof-checkbox span {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--border-dark);
+    background: transparent;
+    transition: background 0.12s;
+}
+.prof-checkbox input:checked ~ span {
+    background: var(--crimson);
+    border-color: var(--crimson-dark);
+    box-shadow: inset 0 0 0 2px rgba(255, 250, 230, 0.6);
+}
+.prof-checkbox-expert span {
+    border-color: var(--regal);
+    border-style: dashed;
+}
+.prof-checkbox-expert input:checked ~ span {
+    background: var(--regal);
+    border-color: var(--regal-dark);
+}
+.prof-checkbox input:disabled ~ span {
+    cursor: default;
+    opacity: 0.5;
+}
+
+/* ---------- sheet actions ---------- */
+
+.sheet-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px dashed rgba(60, 35, 10, 0.25);
+}
 
 /* ============================== D&D PLACEHOLDER ============================== */
 
@@ -1795,4 +2234,32 @@ body::before {
     .ruleset-field {
         grid-template-columns: 1fr;
     }
+
+    /* Sheet collapses: rail goes inline, ability grid 3x2, combat 2x2 */
+    .sheet { grid-template-columns: 1fr; gap: 14px; }
+    .sheet-rail {
+        position: static;
+        padding: 10px 12px;
+    }
+    .sheet-rail ul {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-bottom: 10px;
+    }
+    .sheet-rail a {
+        padding: 5px 9px;
+        font-size: 0.74rem;
+        border-left: none;
+        border-bottom: 2px solid transparent;
+    }
+    .sheet-rail a:hover {
+        border-left: none;
+        border-bottom-color: var(--gold);
+    }
+    .ability-grid { grid-template-columns: repeat(3, 1fr); }
+    .combat-grid { grid-template-columns: repeat(2, 1fr); }
+    .hp-row { grid-template-columns: repeat(2, 1fr); }
+    .sheet-grid.two-col { grid-template-columns: 1fr; }
+    .skill-list { grid-template-columns: 1fr; }
 }

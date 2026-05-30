@@ -171,6 +171,9 @@ class Campaign(db.Model):
     # Optional level constraints for character creation. NULL = no limit.
     starting_level_min = db.Column(db.Integer, nullable=True)
     starting_level_max = db.Column(db.Integer, nullable=True)
+    # When True, character sheets in this campaign are locked (read-only).
+    # DM flips this back to False when sheet edits need to happen.
+    is_ready = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     dm = db.relationship('User', backref=db.backref('campaigns_dm', lazy='dynamic'))
@@ -463,6 +466,9 @@ def migrate_schema():
                         altered = True
                     if 'starting_level_max' not in camp_cols:
                         conn.execute(text("ALTER TABLE campaigns ADD COLUMN starting_level_max INTEGER"))
+                        altered = True
+                    if 'is_ready' not in camp_cols:
+                        conn.execute(text("ALTER TABLE campaigns ADD COLUMN is_ready BOOLEAN NOT NULL DEFAULT 0"))
                         altered = True
             except Exception as e:
                 print(f"[migrate] campaigns: {e}")
