@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% set nav_section = 'dnd' %}
+{% block title %}{{ character.name }} &mdash; The Party Ledger{% endblock %}
+
+{% block header %}
+<header class="site-header campaign-header">
+    <div class="campaign-header-eyebrow">
+        <a href="{{ url_for('dnd.campaign_detail', campaign_id=campaign.id) }}" class="breadcrumb-back">
+            &larr; {{ campaign.name }}
+        </a>
+        <span class="campaign-card-ruleset">D&amp;D {{ character.ruleset }}</span>
+    </div>
+    <h1 class="site-title">{{ character.name }}</h1>
+    <p class="site-subtitle">
+        Level {{ character.level }}
+        {% if character.race %}&middot; {{ character.race }}{% endif %}
+        {% if character.character_class %}&middot; {{ character.character_class }}{% endif %}
+    </p>
+    <div class="filigree" aria-hidden="true">&#10070; &#9876; &#10070;</div>
+</header>
+{% endblock %}
+
+{% block content %}
+<section class="calendar-frame">
+    <div class="character-stub">
+        <h2 class="section-heading">Hero's Sheet</h2>
+        <p class="dnd-placeholder-body" style="margin-bottom: 18px;">
+            The full sheet &mdash; abilities, combat stats, proficiencies, spells, inventory, features, story &mdash; cometh next.
+            For now, here are the seeds of thy hero.
+        </p>
+
+        <dl class="character-stub-grid">
+            <dt>Player</dt><dd>{{ character.user.username }}</dd>
+            <dt>Race</dt><dd>{{ character.race or '&mdash;'|safe }}</dd>
+            <dt>Class</dt><dd>{{ character.character_class or '&mdash;'|safe }}</dd>
+            <dt>Level</dt><dd>{{ character.level }}</dd>
+            <dt>Proficiency Bonus</dt><dd>+{{ character.proficiency_bonus }}</dd>
+            <dt>Ruleset</dt><dd>D&amp;D {{ character.ruleset }}</dd>
+        </dl>
+
+        <div class="modal-actions" style="justify-content: space-between;">
+            <a href="{{ url_for('dnd.campaign_detail', campaign_id=campaign.id) }}"
+               class="btn-secondary">&larr; Back to Campaign</a>
+            {% if is_mine or is_dm %}
+            <form method="post" action="{{ url_for('dnd.character_delete', character_id=character.id) }}"
+                  onsubmit="return confirm('Truly remove {{ character.name }} from the ledger?');"
+                  style="margin: 0;">
+                <button type="submit" class="btn-danger">Remove Character</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

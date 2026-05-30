@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% set nav_section = 'dnd' %}
+{% block title %}{{ campaign.name }} &mdash; The Party Ledger{% endblock %}
+
+{% block header %}
+<header class="site-header campaign-header">
+    <div class="campaign-header-eyebrow">
+        <a href="{{ url_for('dnd.index') }}" class="breadcrumb-back">&larr; All Campaigns</a>
+        <span class="campaign-card-ruleset">D&amp;D {{ campaign.default_ruleset }}</span>
+    </div>
+    <h1 class="site-title">{{ campaign.name }}</h1>
+    {% if campaign.description %}
+    <p class="site-subtitle">{{ campaign.description }}</p>
+    {% endif %}
+    <div class="filigree" aria-hidden="true">&#10070; &#9876; &#10070;</div>
+</header>
+{% endblock %}
+
+{% block content %}
+<section class="calendar-frame">
+    <div class="campaign-detail-grid">
+
+        <div class="campaign-detail-main">
+            <div class="campaigns-toolbar">
+                <h2 class="section-heading">Characters in the Party</h2>
+                <a href="{{ url_for('dnd.character_new', campaign_id=campaign.id) }}"
+                   class="btn-primary">&#10010; New Character</a>
+            </div>
+
+            {% if characters %}
+            <ul class="character-list">
+                {% for ch in characters %}
+                <li class="character-row">
+                    <a class="character-row-link" href="{{ url_for('dnd.character_view', character_id=ch.id) }}">
+                        <div class="character-row-name">{{ ch.name }}</div>
+                        <div class="character-row-sub">
+                            Level {{ ch.level }}
+                            {% if ch.race %}&middot; {{ ch.race }}{% endif %}
+                            {% if ch.character_class %}&middot; {{ ch.character_class }}{% endif %}
+                        </div>
+                        <div class="character-row-player">
+                            played by <strong>{{ ch.user.username }}</strong>
+                        </div>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="dnd-placeholder-body" style="text-align: left;">
+                None hath taken up arms yet. Forge a character to begin.
+            </p>
+            {% endif %}
+        </div>
+
+        <aside class="campaign-detail-side">
+            <div class="join-code-card">
+                <h3 class="side-heading">Join Code</h3>
+                <div class="join-code-display" id="join-code-display">{{ campaign.join_code }}</div>
+                <button type="button" class="btn-secondary copy-btn"
+                        data-copy="{{ campaign.join_code }}">Copy Code</button>
+                <p class="join-code-hint">Share with players to add them to the party.</p>
+            </div>
+
+            <div class="party-card">
+                <h3 class="side-heading">The Party</h3>
+                <ul class="party-list">
+                    {% for m in members %}
+                    <li class="party-member">
+                        <span class="party-member-name">
+                            {% if m.user_id == campaign.dm_user_id %}&#9818;{% else %}&#10070;{% endif %}
+                            {{ m.user.username }}
+                        </span>
+                        {% if m.user_id == campaign.dm_user_id %}
+                        <span class="party-member-role">DM</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            {% if is_dm %}
+            <form method="post" action="{{ url_for('dnd.campaign_delete', campaign_id=campaign.id) }}"
+                  onsubmit="return confirm('Truly disband &quot;{{ campaign.name }}&quot;? All characters within shall be lost.');"
+                  class="danger-form">
+                <button type="submit" class="btn-danger">Disband Campaign</button>
+            </form>
+            {% endif %}
+        </aside>
+
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const code = btn.dataset.copy || '';
+        try {
+            await navigator.clipboard.writeText(code);
+            const original = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = original; }, 1400);
+        } catch (e) {
+            btn.textContent = 'Press Ctrl+C';
+        }
+    });
+});
+</script>
+{% endblock %}

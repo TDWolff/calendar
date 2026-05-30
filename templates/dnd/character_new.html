@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% set nav_section = 'dnd' %}
+{% block title %}New Character &mdash; {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+    <div class="auth-card-inner">
+        <div class="auth-mark" aria-hidden="true">&#9876;</div>
+        <h1 class="auth-title">Forge a New Hero</h1>
+        <p class="auth-subtitle">For the campaign: <em>{{ campaign.name }}</em></p>
+
+        {% if error %}
+        <div class="modal-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" class="auth-form" novalidate>
+            <label class="field">
+                <span class="field-label">Hero's Name</span>
+                <input type="text" name="name" maxlength="120" autocomplete="off"
+                       autofocus required placeholder="e.g. Eldrin Stormwind">
+            </label>
+
+            <div class="datetime-row">
+                <div class="datetime-col">
+                    <label class="field">
+                        <span class="field-label">Race / Species</span>
+                        <input type="text" name="race" maxlength="80" placeholder="e.g. Elf, Human">
+                    </label>
+                </div>
+                <div class="datetime-col">
+                    <label class="field">
+                        <span class="field-label">Class</span>
+                        <input type="text" name="character_class" maxlength="80" placeholder="e.g. Wizard, Rogue">
+                    </label>
+                </div>
+            </div>
+
+            <div class="datetime-row">
+                <div class="datetime-col">
+                    <label class="field">
+                        <span class="field-label">Starting Level</span>
+                        <input type="number" name="level" min="1" max="20" value="1">
+                    </label>
+                </div>
+                <div class="datetime-col">
+                    <label class="field">
+                        <span class="field-label">Ruleset</span>
+                        <select name="ruleset" class="select-input">
+                            {% for rs in rulesets %}
+                            <option value="{{ rs }}" {% if rs == campaign.default_ruleset %}selected{% endif %}>
+                                D&amp;D {{ rs }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+            </div>
+
+            <p class="field-hint">
+                Further details &mdash; abilities, HP, spells, inventory &mdash; come after thy hero is born.
+            </p>
+
+            <div class="modal-actions auth-actions">
+                <a href="{{ url_for('dnd.campaign_detail', campaign_id=campaign.id) }}" class="btn-secondary">Cancel</a>
+                <button type="submit" class="btn-primary">Bring to Life</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

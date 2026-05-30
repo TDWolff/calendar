@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% set nav_section = 'dnd' %}
+{% block title %}Join Campaign &mdash; The Party Ledger{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+    <div class="auth-card-inner">
+        <div class="auth-mark" aria-hidden="true">&#9876;</div>
+        <h1 class="auth-title">Join a Campaign</h1>
+        <p class="auth-subtitle">Enter the eight-rune code given by thy Dungeon Master.</p>
+
+        {% if error %}
+        <div class="modal-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" class="auth-form" novalidate>
+            <label class="field">
+                <span class="field-label">Join Code</span>
+                <input type="text" name="join_code" maxlength="16" autocomplete="off"
+                       autofocus required class="join-code-input"
+                       value="{{ code_prefill }}"
+                       placeholder="ABCD2345"
+                       style="text-transform: uppercase; letter-spacing: 0.3em; font-family: var(--font-display); font-size: 1.4rem; text-align: center;">
+            </label>
+
+            <div class="modal-actions auth-actions">
+                <a href="{{ url_for('dnd.index') }}" class="btn-secondary">Cancel</a>
+                <button type="submit" class="btn-primary">Join</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

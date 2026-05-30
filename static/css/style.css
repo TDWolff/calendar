@@ -1260,6 +1260,369 @@ body::before {
     text-decoration: underline;
 }
 
+/* ============================== D&D SHARED ============================== */
+
+.section-heading {
+    font-family: var(--font-display);
+    color: var(--crimson-dark);
+    font-size: 1.4rem;
+    margin: 0;
+    letter-spacing: 0.03em;
+}
+
+.btn-danger {
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.85rem;
+    padding: 10px 18px;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 1px solid var(--crimson-dark);
+    background: transparent;
+    color: var(--crimson-dark);
+    font-weight: 600;
+    transition: background 0.15s, color 0.15s;
+}
+.btn-danger:hover {
+    background: var(--crimson);
+    color: var(--parchment-light);
+    border-color: var(--crimson-dark);
+}
+
+.breadcrumb-back {
+    font-family: var(--font-heading);
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-weight: 600;
+}
+.breadcrumb-back:hover { color: var(--crimson-dark); }
+
+.select-input {
+    width: 100%;
+    background: rgba(255, 250, 230, 0.55);
+    border: 1px solid var(--border-dark);
+    border-radius: 3px;
+    padding: 9px 11px;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--ink);
+}
+
+/* ============================== CAMPAIGNS ============================== */
+
+.campaigns-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(60, 35, 10, 0.18);
+}
+
+.campaigns-toolbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.campaign-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.campaign-card {
+    background: rgba(255, 250, 230, 0.65);
+    border: 1px solid var(--border-dark);
+    border-left: 5px solid var(--regal);
+    border-radius: 4px;
+    transition: transform 0.12s, box-shadow 0.15s;
+    position: relative;
+}
+.campaign-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 rgba(176, 138, 62, 0.45), 0 8px 18px rgba(60, 35, 10, 0.18);
+}
+
+.campaign-card-link {
+    display: block;
+    padding: 16px 18px;
+    text-decoration: none;
+    color: var(--ink);
+}
+
+.campaign-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.campaign-card-name {
+    font-family: var(--font-display);
+    color: var(--crimson-dark);
+    margin: 0;
+    font-size: 1.2rem;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+}
+
+.campaign-card-ruleset {
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border: 1px solid var(--gold);
+    border-radius: 2px;
+    color: var(--amber-dark);
+    background: rgba(255, 250, 230, 0.8);
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-weight: 700;
+}
+
+.campaign-card-desc {
+    margin: 6px 0 10px;
+    font-size: 0.95rem;
+    color: var(--ink);
+    font-style: italic;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.campaign-card-meta {
+    font-family: var(--font-heading);
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+}
+.campaign-card-meta strong {
+    color: var(--ink);
+    font-weight: 700;
+}
+
+/* ============================== CAMPAIGN DETAIL ============================== */
+
+.campaign-header {
+    margin-bottom: 16px;
+}
+.campaign-header-eyebrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.campaign-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 24px;
+    align-items: start;
+}
+
+.campaign-detail-main { min-width: 0; }
+
+.campaign-detail-side {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.side-heading {
+    font-family: var(--font-display);
+    color: var(--crimson-dark);
+    font-size: 1rem;
+    margin: 0 0 10px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.join-code-card,
+.party-card {
+    background: rgba(255, 250, 230, 0.7);
+    border: 1px solid var(--border-dark);
+    border-radius: 4px;
+    padding: 16px;
+    position: relative;
+}
+.join-code-card::before,
+.party-card::before {
+    content: '';
+    position: absolute;
+    top: 4px; left: 4px;
+    width: 12px; height: 12px;
+    border-left: 1px solid var(--gold);
+    border-top: 1px solid var(--gold);
+    opacity: 0.7;
+}
+
+.join-code-display {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    letter-spacing: 0.25em;
+    text-align: center;
+    color: var(--crimson-dark);
+    padding: 12px 8px;
+    border: 2px dashed var(--gold);
+    border-radius: 3px;
+    background: rgba(176, 138, 62, 0.08);
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 0 rgba(60, 35, 10, 0.15);
+}
+
+.copy-btn {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+}
+
+.join-code-hint {
+    margin: 8px 0 0;
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    text-align: center;
+    letter-spacing: 0.03em;
+}
+
+.party-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.party-member {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    background: rgba(255, 250, 230, 0.6);
+    border-left: 3px solid var(--gold);
+    border-radius: 2px;
+    font-family: var(--font-heading);
+    font-size: 0.92rem;
+    color: var(--ink);
+}
+.party-member-role {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 2px 8px;
+    border-radius: 2px;
+    background: var(--regal);
+    color: var(--parchment-light);
+    font-weight: 700;
+}
+
+.danger-form { margin-top: 8px; }
+.danger-form .btn-danger { width: 100%; }
+
+/* ============================== CHARACTER LIST + STUB ============================== */
+
+.character-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.character-row {
+    background: rgba(255, 250, 230, 0.65);
+    border: 1px solid var(--border-dark);
+    border-left: 4px solid var(--crimson);
+    border-radius: 3px;
+    transition: transform 0.1s, box-shadow 0.15s;
+}
+.character-row:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 0 rgba(176, 138, 62, 0.4), 0 6px 14px rgba(60, 35, 10, 0.15);
+}
+
+.character-row-link {
+    display: block;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: var(--ink);
+}
+
+.character-row-name {
+    font-family: var(--font-display);
+    color: var(--crimson-dark);
+    font-size: 1.1rem;
+    letter-spacing: 0.02em;
+    margin-bottom: 3px;
+}
+
+.character-row-sub {
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    color: var(--ink);
+    letter-spacing: 0.03em;
+    margin-bottom: 2px;
+}
+
+.character-row-player {
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+}
+.character-row-player strong {
+    font-style: normal;
+    color: var(--ink);
+}
+
+.character-stub-grid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 18px;
+    margin: 0 0 22px;
+}
+.character-stub-grid dt {
+    font-family: var(--font-heading);
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    align-self: center;
+}
+.character-stub-grid dd {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--ink);
+    font-size: 1.02rem;
+    font-weight: 600;
+}
+
+.ruleset-field {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
 /* ============================== D&D PLACEHOLDER ============================== */
 
 .dnd-placeholder {
@@ -1375,4 +1738,14 @@ body::before {
 
     .auth-card { margin-top: 20px; }
     .auth-card-inner { padding: 26px 20px 22px; }
+
+    .campaign-detail-grid {
+        grid-template-columns: 1fr;
+    }
+    .campaign-list {
+        grid-template-columns: 1fr;
+    }
+    .ruleset-field {
+        grid-template-columns: 1fr;
+    }
 }

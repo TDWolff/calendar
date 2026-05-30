@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% set nav_section = 'dnd' %}
+{% block title %}New Campaign &mdash; The Party Ledger{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+    <div class="auth-card-inner">
+        <div class="auth-mark" aria-hidden="true">&#9818;</div>
+        <h1 class="auth-title">Forge a New Campaign</h1>
+        <p class="auth-subtitle">As Dungeon Master, set the stage for adventures to come.</p>
+
+        {% if error %}
+        <div class="modal-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" class="auth-form" novalidate>
+            <label class="field">
+                <span class="field-label">Campaign Name</span>
+                <input type="text" name="name" maxlength="120" autocomplete="off"
+                       autofocus required placeholder="e.g. Curse of Strahd, The Hollow Crown">
+            </label>
+
+            <label class="field">
+                <span class="field-label">Description <em>(optional)</em></span>
+                <textarea name="description" maxlength="2000" rows="3"
+                          placeholder="A brief synopsis of the realm and the tale."></textarea>
+            </label>
+
+            <fieldset class="status-field ruleset-field">
+                <legend class="field-label">Ruleset</legend>
+                {% for rs in rulesets %}
+                <label class="status-option">
+                    <input type="radio" name="default_ruleset" value="{{ rs }}" {% if rs == '5e' %}checked{% endif %}>
+                    <span>D&amp;D {{ rs }}</span>
+                </label>
+                {% endfor %}
+            </fieldset>
+
+            <div class="modal-actions auth-actions">
+                <a href="{{ url_for('dnd.index') }}" class="btn-secondary">Cancel</a>
+                <button type="submit" class="btn-primary">Forge Campaign</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

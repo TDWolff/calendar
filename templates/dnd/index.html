@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% set nav_section = 'dnd' %}
-{% block title %}D&amp;D &mdash; The Party Ledger{% endblock %}
+{% block title %}Campaigns &mdash; The Party Ledger{% endblock %}
 
 {% block header %}
 <header class="site-header">
@@ -14,26 +14,53 @@
         </svg>
     </div>
     <h1 class="site-title">The Adventurer's Codex</h1>
-    <p class="site-subtitle">Characters, dice, and tales of yore.</p>
+    <p class="site-subtitle">Thy campaigns, thy companions, thy fate.</p>
     <div class="filigree" aria-hidden="true">&#10070; &#9876; &#10070;</div>
 </header>
 {% endblock %}
 
 {% block content %}
 <section class="calendar-frame">
-    <div class="dnd-placeholder">
-        <h2 class="dnd-placeholder-title">Soon, brave adventurer&hellip;</h2>
-        <p class="dnd-placeholder-body">
-            Here shall live thy character sheets, dice rolls, spellbooks, and campaigns.
-            The forge is hot, the parchment is ready &mdash; the codex doth await.
-        </p>
-        <ul class="dnd-roadmap">
-            <li><span class="dnd-roadmap-mark">&#9876;</span> Character sheets (stats, HP, AC, spells, inventory)</li>
-            <li><span class="dnd-roadmap-mark">&#9860;</span> Dice roller (<code>2d6+3</code>, advantage, disadvantage)</li>
-            <li><span class="dnd-roadmap-mark">&#9819;</span> Campaigns &amp; sessions linked to thy calendar</li>
-            <li><span class="dnd-roadmap-mark">&#10070;</span> SRD reference (spells, monsters, items)</li>
-            <li><span class="dnd-roadmap-mark">&#9818;</span> Live sessions with a real DM</li>
-        </ul>
+    <div class="campaigns-toolbar">
+        <h2 class="section-heading">Thy Campaigns</h2>
+        <div class="campaigns-toolbar-actions">
+            <a href="{{ url_for('dnd.campaign_join') }}" class="btn-secondary">Join via Code</a>
+            <a href="{{ url_for('dnd.campaign_new') }}" class="btn-primary">&#10010; New Campaign</a>
+        </div>
     </div>
+
+    {% if campaigns %}
+    <ul class="campaign-list">
+        {% for c in campaigns %}
+        <li class="campaign-card">
+            <a class="campaign-card-link" href="{{ url_for('dnd.campaign_detail', campaign_id=c.id) }}">
+                <div class="campaign-card-header">
+                    <h3 class="campaign-card-name">{{ c.name }}</h3>
+                    <span class="campaign-card-ruleset">D&amp;D {{ c.default_ruleset }}</span>
+                </div>
+                {% if c.description %}
+                <p class="campaign-card-desc">{{ c.description }}</p>
+                {% endif %}
+                <div class="campaign-card-meta">
+                    <span class="campaign-card-dm">
+                        {% if c.dm_user_id == current_user.id %}
+                            &#9818; Thou art the Dungeon Master
+                        {% else %}
+                            &#9818; DM: <strong>{{ c.dm.username }}</strong>
+                        {% endif %}
+                    </span>
+                </div>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="dnd-placeholder">
+        <h2 class="dnd-placeholder-title">No campaigns yet &mdash; forge thy first.</h2>
+        <p class="dnd-placeholder-body">
+            Create a campaign as a Dungeon Master, or join one with a code from thy DM.
+        </p>
+    </div>
+    {% endif %}
 </section>
 {% endblock %}
