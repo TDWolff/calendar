@@ -12,6 +12,12 @@
     {% if campaign.description %}
     <p class="site-subtitle">{{ campaign.description }}</p>
     {% endif %}
+    {% set level_label = campaign.starting_level_label %}
+    {% if level_label %}
+    <div class="campaign-constraints" style="justify-content: center;">
+        <span class="constraint-badge constraint-badge-level">{{ level_label }}</span>
+    </div>
+    {% endif %}
     <div class="filigree" aria-hidden="true">&#10070; &#9876; &#10070;</div>
 </header>
 {% endblock %}

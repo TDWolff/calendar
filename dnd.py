@@ -12,6 +12,58 @@ dnd_bp = Blueprint('dnd', __name__, url_prefix='/dnd')
 
 # --------------------------------------------------------------------------- helpers
 
+ABS_LEVEL_MIN = 1
+ABS_LEVEL_MAX = 20
+
+
+# Race + class catalogs per ruleset. None signals "no enforced list" (free text).
+# Lists are intentionally limited to the canonical Player's Handbook sets so the
+# dropdown stays tractable; expansions can be added later.
+RULESET_CONTENT = {
+    '5e': {
+        'races': [
+            'Dragonborn', 'Dwarf', 'Elf', 'Gnome', 'Half-Elf', 'Half-Orc',
+            'Halfling', 'Human', 'Tiefling',
+        ],
+        'classes': [
+            'Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk',
+            'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard',
+        ],
+    },
+    '5.5e': {
+        # 2024 PHB calls them "species" but the model column is still race.
+        'races': [
+            'Aasimar', 'Dragonborn', 'Dwarf', 'Elf', 'Gnome', 'Goliath',
+            'Halfling', 'Human', 'Orc', 'Tiefling',
+        ],
+        'classes': [
+            'Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk',
+            'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard',
+        ],
+    },
+    'other': None,
+}
+
+
+def _ruleset_content(ruleset):
+    """Returns {'races': [...], 'classes': [...]} or None for 'other'/unknown."""
+    return RULESET_CONTENT.get(ruleset)
+
+
+def _parse_optional_level(raw, field_label):
+    """Returns (value_or_None, error_or_None). Empty string → None (no constraint)."""
+    raw = (raw or '').strip()
+    if not raw:
+        return None, None
+    try:
+        n = int(raw)
+    except ValueError:
+        return None, f'{field_label} must be a whole number between {ABS_LEVEL_MIN} and {ABS_LEVEL_MAX}.'
+    if n < ABS_LEVEL_MIN or n > ABS_LEVEL_MAX:
+        return None, f'{field_label} must be between {ABS_LEVEL_MIN} and {ABS_LEVEL_MAX}.'
+    return n, None
+
+
 def _user_campaigns():
     """Campaigns the current user is involved in (as DM or member)."""
     member_ids = [m.campaign_id for m in current_user.campaign_memberships.all()]
@@ -46,16 +98,27 @@ def index():
 @login_required
 def campaign_new():
     error = None
+    form = {}
     if request.method == 'POST':
-        name = (request.form.get('name') or '').strip()
-        description = (request.form.get('description') or '').strip()
-        ruleset = (request.form.get('default_ruleset') or '5e').strip()
+        form = request.form
+        name = (form.get('name') or '').strip()
+        description = (form.get('description') or '').strip()
+        ruleset = (form.get('default_ruleset') or '5e').strip()
+        lvl_min, err_min = _parse_optional_level(form.get('starting_level_min'), 'Min level')
+        lvl_max, err_max = _parse_optional_level(form.get('starting_level_max'), 'Max level')
+
         if not name:
             error = 'A campaign must have a name.'
         elif len(name) > 120:
             error = 'Name too long (max 120 chars).'
         elif ruleset not in VALID_RULESETS:
             error = f'Ruleset must be one of: {", ".join(sorted(VALID_RULESETS))}.'
+        elif err_min:
+            error = err_min
+        elif err_max:
+            error = err_max
+        elif lvl_min is not None and lvl_max is not None and lvl_min > lvl_max:
+            error = 'Min level cannot exceed max level.'
         else:
             campaign = Campaign(
                 name=name,
@@ -63,6 +126,8 @@ def campaign_new():
                 dm_user_id=current_user.id,
                 join_code=make_unique_join_code(),
                 default_ruleset=ruleset,
+                starting_level_min=lvl_min,
+                starting_level_max=lvl_max,
             )
             db.session.add(campaign)
             db.session.flush()
@@ -71,7 +136,8 @@ def campaign_new():
             db.session.commit()
             return redirect(url_for('dnd.campaign_detail', campaign_id=campaign.id))
 
-    return render_template('dnd/campaign_new.html', error=error, rulesets=sorted(VALID_RULESETS))
+    return render_template('dnd/campaign_new.html',
+                           error=error, rulesets=sorted(VALID_RULESETS), form=form)
 
 
 @dnd_bp.route('/campaigns/join', methods=['GET', 'POST'])
@@ -188,21 +254,40 @@ def character_new(campaign_id):
         abort(404)
     _ensure_membership(campaign)
 
+    # Effective level bounds for this campaign's character creation.
+    lvl_min = campaign.starting_level_min or ABS_LEVEL_MIN
+    lvl_max = campaign.starting_level_max or ABS_LEVEL_MAX
+
+    # Ruleset is locked to the campaign's. We don't accept a different one from
+    # the form — that'd just be a player picking their own rulebook.
+    ruleset = campaign.default_ruleset
+    content = _ruleset_content(ruleset)
+    race_options = content['races'] if content else None
+    class_options = content['classes'] if content else None
+
     error = None
+    form = {}
     if request.method == 'POST':
-        name = (request.form.get('name') or '').strip()
-        char_class = (request.form.get('character_class') or '').strip()
-        race = (request.form.get('race') or '').strip()
+        form = request.form
+        name = (form.get('name') or '').strip()
+        char_class = (form.get('character_class') or '').strip()
+        race = (form.get('race') or '').strip()
         try:
-            level = max(1, min(20, int(request.form.get('level') or 1)))
+            level = int(form.get('level') or lvl_min)
         except ValueError:
-            level = 1
-        ruleset = (request.form.get('ruleset') or campaign.default_ruleset).strip()
+            level = lvl_min
 
         if not name:
             error = 'A hero must have a name.'
-        elif ruleset not in VALID_RULESETS:
-            error = f'Ruleset must be one of: {", ".join(sorted(VALID_RULESETS))}.'
+        elif level < lvl_min or level > lvl_max:
+            if lvl_min == lvl_max:
+                error = f'The Dungeon Master requires new heroes to begin at level {lvl_min}.'
+            else:
+                error = f'New heroes must begin between levels {lvl_min} and {lvl_max} in this campaign.'
+        elif race_options is not None and race and race not in race_options:
+            error = f'"{race}" is not a recognized race in this campaign’s ruleset.'
+        elif class_options is not None and char_class and char_class not in class_options:
+            error = f'"{char_class}" is not a recognized class in this campaign’s ruleset.'
         else:
             character = Character(
                 user_id=current_user.id,
@@ -220,7 +305,10 @@ def character_new(campaign_id):
 
     return render_template(
         'dnd/character_new.html',
-        campaign=campaign, error=error, rulesets=sorted(VALID_RULESETS),
+        campaign=campaign, error=error, form=form,
+        lvl_min=lvl_min, lvl_max=lvl_max,
+        ruleset=ruleset,
+        race_options=race_options, class_options=class_options,
     )
 
 

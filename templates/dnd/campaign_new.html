@@ -17,23 +17,47 @@
             <label class="field">
                 <span class="field-label">Campaign Name</span>
                 <input type="text" name="name" maxlength="120" autocomplete="off"
-                       autofocus required placeholder="e.g. Curse of Strahd, The Hollow Crown">
+                       autofocus required value="{{ form.get('name') or '' }}"
+                       placeholder="e.g. Curse of Strahd, The Hollow Crown">
             </label>
 
             <label class="field">
                 <span class="field-label">Description <em>(optional)</em></span>
                 <textarea name="description" maxlength="2000" rows="3"
-                          placeholder="A brief synopsis of the realm and the tale."></textarea>
+                          placeholder="A brief synopsis of the realm and the tale.">{{ form.get('description') or '' }}</textarea>
             </label>
 
             <fieldset class="status-field ruleset-field">
                 <legend class="field-label">Ruleset</legend>
                 {% for rs in rulesets %}
                 <label class="status-option">
-                    <input type="radio" name="default_ruleset" value="{{ rs }}" {% if rs == '5e' %}checked{% endif %}>
+                    <input type="radio" name="default_ruleset" value="{{ rs }}"
+                           {% if (form.get('default_ruleset') or '5e') == rs %}checked{% endif %}>
                     <span>D&amp;D {{ rs }}</span>
                 </label>
                 {% endfor %}
+            </fieldset>
+
+            <fieldset class="status-field level-range-field">
+                <legend class="field-label">
+                    Starting Level Range <em>(optional &mdash; leave blank for no limit)</em>
+                </legend>
+                <div class="datetime-col">
+                    <span class="sub-label">Min Level</span>
+                    <input type="number" name="starting_level_min" min="1" max="20"
+                           value="{{ form.get('starting_level_min') or '' }}"
+                           placeholder="any">
+                </div>
+                <div class="datetime-col">
+                    <span class="sub-label">Max Level</span>
+                    <input type="number" name="starting_level_max" min="1" max="20"
+                           value="{{ form.get('starting_level_max') or '' }}"
+                           placeholder="any">
+                </div>
+                <p class="field-hint">
+                    Set both to the same value to lock every new character to a single level.
+                    Set just one to enforce only a floor or ceiling.
+                </p>
             </fieldset>
 
             <div class="modal-actions auth-actions">

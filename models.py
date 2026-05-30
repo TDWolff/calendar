@@ -152,6 +152,9 @@ class Campaign(db.Model):
     dm_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     join_code = db.Column(db.String(16), nullable=False, unique=True, index=True)
     default_ruleset = db.Column(db.String(20), nullable=False, default='5e')
+    # Optional level constraints for character creation. NULL = no limit.
+    starting_level_min = db.Column(db.Integer, nullable=True)
+    starting_level_max = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     dm = db.relationship('User', backref=db.backref('campaigns_dm', lazy='dynamic'))
@@ -165,8 +168,22 @@ class Campaign(db.Model):
             'dm_username': self.dm.username if self.dm else None,
             'join_code': self.join_code,
             'default_ruleset': self.default_ruleset,
+            'starting_level_min': self.starting_level_min,
+            'starting_level_max': self.starting_level_max,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+    @property
+    def starting_level_label(self):
+        """Human-readable label for the level constraint, or '' if none."""
+        mn, mx = self.starting_level_min, self.starting_level_max
+        if mn is None and mx is None:
+            return ''
+        if mn is not None and mx is not None:
+            return f'Level {mn}' if mn == mx else f'Levels {mn}–{mx}'
+        if mn is not None:
+            return f'Level {mn} or higher'
+        return f'Level {mx} or lower'
 
 
 class CampaignMember(db.Model):
@@ -418,6 +435,22 @@ def migrate_schema():
             if 'user_id' not in existing_cols:
                 conn.execute(text("ALTER TABLE events ADD COLUMN user_id INTEGER REFERENCES users(id)"))
                 altered = True
+
+            # campaigns table: starting_level_min / starting_level_max were
+            # added after the table was first introduced.
+            try:
+                result = conn.execute(text("PRAGMA table_info(campaigns)"))
+                camp_cols = {row[1] for row in result}
+                if camp_cols:  # table exists (otherwise create_all will handle it)
+                    if 'starting_level_min' not in camp_cols:
+                        conn.execute(text("ALTER TABLE campaigns ADD COLUMN starting_level_min INTEGER"))
+                        altered = True
+                    if 'starting_level_max' not in camp_cols:
+                        conn.execute(text("ALTER TABLE campaigns ADD COLUMN starting_level_max INTEGER"))
+                        altered = True
+            except Exception as e:
+                print(f"[migrate] campaigns: {e}")
+
             if altered:
                 conn.commit()
         except Exception as e:

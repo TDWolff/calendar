@@ -1623,6 +1623,53 @@ body::before {
     grid-template-columns: 1fr 1fr 1fr;
 }
 
+.level-range-field {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.level-range-field .field-hint {
+    grid-column: 1 / -1;
+    margin: 4px 0 0;
+}
+.level-range-field input[type="number"] {
+    background: rgba(255, 250, 230, 0.55);
+    border: 1px solid var(--border-dark);
+    border-radius: 3px;
+    padding: 9px 11px;
+    font-family: var(--font-body);
+    color: var(--ink);
+    font-size: 1rem;
+    width: 100%;
+}
+.level-range-field input[type="number"]:focus {
+    outline: 2px solid var(--gold);
+    outline-offset: -1px;
+}
+
+.campaign-constraints {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 16px;
+}
+.constraint-badge {
+    font-family: var(--font-heading);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 5px 10px;
+    border: 1px solid var(--gold);
+    border-radius: 2px;
+    color: var(--amber-dark);
+    background: rgba(255, 250, 230, 0.7);
+    font-weight: 700;
+}
+.constraint-badge-level {
+    color: var(--regal-dark);
+    border-color: var(--regal);
+    background: rgba(91, 42, 130, 0.08);
+}
+
 /* ============================== D&D PLACEHOLDER ============================== */
 
 .dnd-placeholder {
