@@ -2109,6 +2109,109 @@ body::before {
     border-top: 1px dashed rgba(60, 35, 10, 0.25);
 }
 
+/* Rule-derived UI bits */
+
+.rule-note {
+    background: rgba(176, 138, 62, 0.1);
+    border-left: 3px solid var(--gold);
+    padding: 8px 14px;
+    margin-bottom: 14px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    color: var(--ink);
+    border-radius: 0 3px 3px 0;
+}
+.rule-note p { margin: 0; }
+.rule-note p + p { margin-top: 4px; }
+.rule-note-sub {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+}
+
+.skill-rule-note strong { color: var(--crimson-dark); }
+#skill-count-display { font-family: var(--font-display); font-size: 1.05em; }
+
+.skill-row-locked {
+    opacity: 0.4;
+    pointer-events: auto;  /* let titles/tooltips still show */
+}
+.skill-row-locked .skill-name { font-style: italic; }
+.skill-row-locked .skill-bonus { color: var(--ink-soft); }
+
+.skill-row-granted {
+    background: rgba(91, 42, 130, 0.08);
+    border-left: 3px solid var(--regal);
+    padding-left: 6px !important;
+}
+
+.skill-row-capped {
+    /* Subtle gray so the user can see they've hit the cap */
+    background: rgba(60, 35, 10, 0.04);
+}
+
+.skill-tag {
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-family: var(--font-heading);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: var(--regal);
+    color: var(--parchment-light);
+    border-radius: 2px;
+    vertical-align: middle;
+}
+
+.granted-list {
+    margin: 0 0 8px;
+    padding: 8px 10px;
+    background: rgba(176, 138, 62, 0.08);
+    border: 1px dashed rgba(60, 35, 10, 0.3);
+    border-radius: 3px;
+}
+.granted-list > .sheet-label {
+    font-size: 0.68rem;
+    margin-bottom: 4px;
+    display: block;
+}
+.granted-list ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+}
+.granted-list li {
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    color: var(--ink);
+    padding: 2px 8px;
+    background: rgba(255, 250, 230, 0.85);
+    border-radius: 2px;
+    border: 1px solid rgba(60, 35, 10, 0.2);
+}
+
+.sheet-sub-label {
+    font-family: var(--font-heading);
+    font-size: 0.68rem;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 2px;
+}
+.sheet-sub-label em {
+    text-transform: none;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+}
+
+/* When a save row has a disabled (class-derived) checkbox, dim the
+   prof-checkbox slightly so the visual hierarchy reflects "this is locked". */
+.save-row input[data-prof-for-save]:disabled ~ span {
+    box-shadow: inset 0 0 0 1px rgba(60, 35, 10, 0.2);
+}
+
 /* ============================== D&D PLACEHOLDER ============================== */
 
 .dnd-placeholder {

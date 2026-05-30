@@ -103,6 +103,217 @@ SKILLS = [
 SKILL_KEYS = [k for k, _, _ in SKILLS]
 
 
+# --- 5e (and 5.5e where unchanged) class rule data -------------------------
+# `skill_choices` is a list of SKILL_KEYS the class may pick from. The special
+# value '*' means "any skill" (Bard).
+CLASS_RULES_5E = {
+    'Barbarian': {
+        'save_profs':    ['STR', 'CON'],
+        'skill_choices': ['animal_handling', 'athletics', 'intimidation', 'nature', 'perception', 'survival'],
+        'skill_count':   2,
+        'armor_profs':   ['Light Armor', 'Medium Armor', 'Shields'],
+        'weapon_profs':  ['Simple Weapons', 'Martial Weapons'],
+        'tool_profs':    [],
+        'hit_die':       'd12',
+    },
+    'Bard': {
+        'save_profs':    ['DEX', 'CHA'],
+        'skill_choices': '*',
+        'skill_count':   3,
+        'armor_profs':   ['Light Armor'],
+        'weapon_profs':  ['Simple Weapons', 'Hand Crossbows', 'Longswords', 'Rapiers', 'Shortswords'],
+        'tool_profs':    ['Three musical instruments of choice'],
+        'hit_die':       'd8',
+    },
+    'Cleric': {
+        'save_profs':    ['WIS', 'CHA'],
+        'skill_choices': ['history', 'insight', 'medicine', 'persuasion', 'religion'],
+        'skill_count':   2,
+        'armor_profs':   ['Light Armor', 'Medium Armor', 'Shields'],
+        'weapon_profs':  ['Simple Weapons'],
+        'tool_profs':    [],
+        'hit_die':       'd8',
+    },
+    'Druid': {
+        'save_profs':    ['INT', 'WIS'],
+        'skill_choices': ['arcana', 'animal_handling', 'insight', 'medicine', 'nature', 'perception', 'religion', 'survival'],
+        'skill_count':   2,
+        'armor_profs':   ['Light Armor (non-metal)', 'Medium Armor (non-metal)', 'Shields (non-metal)'],
+        'weapon_profs':  ['Clubs', 'Daggers', 'Darts', 'Javelins', 'Maces', 'Quarterstaffs', 'Scimitars', 'Sickles', 'Slings', 'Spears'],
+        'tool_profs':    ['Herbalism Kit'],
+        'hit_die':       'd8',
+    },
+    'Fighter': {
+        'save_profs':    ['STR', 'CON'],
+        'skill_choices': ['acrobatics', 'animal_handling', 'athletics', 'history', 'insight', 'intimidation', 'perception', 'survival'],
+        'skill_count':   2,
+        'armor_profs':   ['All Armor', 'Shields'],
+        'weapon_profs':  ['Simple Weapons', 'Martial Weapons'],
+        'tool_profs':    [],
+        'hit_die':       'd10',
+    },
+    'Monk': {
+        'save_profs':    ['STR', 'DEX'],
+        'skill_choices': ['acrobatics', 'athletics', 'history', 'insight', 'religion', 'stealth'],
+        'skill_count':   2,
+        'armor_profs':   [],
+        'weapon_profs':  ['Simple Weapons', 'Shortswords'],
+        'tool_profs':    ["One type of artisan's tools or one musical instrument"],
+        'hit_die':       'd8',
+    },
+    'Paladin': {
+        'save_profs':    ['WIS', 'CHA'],
+        'skill_choices': ['athletics', 'insight', 'intimidation', 'medicine', 'persuasion', 'religion'],
+        'skill_count':   2,
+        'armor_profs':   ['All Armor', 'Shields'],
+        'weapon_profs':  ['Simple Weapons', 'Martial Weapons'],
+        'tool_profs':    [],
+        'hit_die':       'd10',
+    },
+    'Ranger': {
+        'save_profs':    ['STR', 'DEX'],
+        'skill_choices': ['animal_handling', 'athletics', 'insight', 'investigation', 'nature', 'perception', 'stealth', 'survival'],
+        'skill_count':   3,
+        'armor_profs':   ['Light Armor', 'Medium Armor', 'Shields'],
+        'weapon_profs':  ['Simple Weapons', 'Martial Weapons'],
+        'tool_profs':    [],
+        'hit_die':       'd10',
+    },
+    'Rogue': {
+        'save_profs':    ['DEX', 'INT'],
+        'skill_choices': ['acrobatics', 'athletics', 'deception', 'insight', 'intimidation', 'investigation',
+                          'perception', 'performance', 'persuasion', 'sleight_of_hand', 'stealth'],
+        'skill_count':   4,
+        'armor_profs':   ['Light Armor'],
+        'weapon_profs':  ['Simple Weapons', 'Hand Crossbows', 'Longswords', 'Rapiers', 'Shortswords'],
+        'tool_profs':    ["Thieves' Tools"],
+        'hit_die':       'd8',
+    },
+    'Sorcerer': {
+        'save_profs':    ['CON', 'CHA'],
+        'skill_choices': ['arcana', 'deception', 'insight', 'intimidation', 'persuasion', 'religion'],
+        'skill_count':   2,
+        'armor_profs':   [],
+        'weapon_profs':  ['Daggers', 'Darts', 'Slings', 'Quarterstaffs', 'Light Crossbows'],
+        'tool_profs':    [],
+        'hit_die':       'd6',
+    },
+    'Warlock': {
+        'save_profs':    ['WIS', 'CHA'],
+        'skill_choices': ['arcana', 'deception', 'history', 'intimidation', 'investigation', 'nature', 'religion'],
+        'skill_count':   2,
+        'armor_profs':   ['Light Armor'],
+        'weapon_profs':  ['Simple Weapons'],
+        'tool_profs':    [],
+        'hit_die':       'd8',
+    },
+    'Wizard': {
+        'save_profs':    ['INT', 'WIS'],
+        'skill_choices': ['arcana', 'history', 'insight', 'investigation', 'medicine', 'religion'],
+        'skill_count':   2,
+        'armor_profs':   [],
+        'weapon_profs':  ['Daggers', 'Darts', 'Slings', 'Quarterstaffs', 'Light Crossbows'],
+        'tool_profs':    [],
+        'hit_die':       'd6',
+    },
+    'Artificer': {
+        'save_profs':    ['CON', 'INT'],
+        'skill_choices': ['arcana', 'history', 'investigation', 'medicine', 'nature', 'perception', 'sleight_of_hand'],
+        'skill_count':   2,
+        'armor_profs':   ['Light Armor', 'Medium Armor', 'Shields'],
+        'weapon_profs':  ['Simple Weapons'],
+        'tool_profs':    ["Thieves' Tools", "Tinker's Tools", "One type of artisan's tools"],
+        'hit_die':       'd8',
+    },
+}
+
+# Races — only covers the canonical PHB-tier + the most common ones. Anything
+# not listed here falls back to "no special grants, speed 30".
+# `extra_skills_count` = race-granted skill choices (e.g. Half-Elf picks 2).
+# `fixed_skills` = automatic skill proficiencies the race always grants.
+RACE_RULES_5E = {
+    'Dragonborn': {'languages': ['Common', 'Draconic'], 'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
+    'Dwarf':      {'languages': ['Common', 'Dwarvish'], 'speed': 25, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': ['Battleaxe', 'Handaxe', 'Light Hammer', 'Warhammer'], 'tool_profs': ["One artisan's tool (Smith's, Brewer's, or Mason's)"]},
+    'Elf':        {'languages': ['Common', 'Elvish'],   'speed': 30, 'fixed_skills': ['perception'], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
+    'Gnome':      {'languages': ['Common', 'Gnomish'],  'speed': 25, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
+    'Half-Elf':   {'languages': ['Common', 'Elvish'],   'speed': 30, 'fixed_skills': [], 'extra_skills_count': 2, 'weapon_profs': [], 'tool_profs': []},
+    'Half-Orc':   {'languages': ['Common', 'Orc'],      'speed': 30, 'fixed_skills': ['intimidation'], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
+    'Halfling':   {'languages': ['Common', 'Halfling'], 'speed': 25, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
+    'Human':      {'languages': ['Common'],             'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
+    'Tiefling':   {'languages': ['Common', 'Infernal'], 'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
+    # 5.5e additions
+    'Aasimar':    {'languages': ['Common', 'Celestial'],'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
+    'Goliath':    {'languages': ['Common', 'Giant'],    'speed': 35, 'fixed_skills': ['athletics'], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
+    'Orc':        {'languages': ['Common', 'Orc'],      'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
+}
+
+# 5.5e class rules are functionally identical to 5e for the proficiency-picker
+# purposes this sheet enforces. Reuse the 5e data; differences can be split
+# off later if/when they matter.
+CLASS_RULES_5_5E = CLASS_RULES_5E
+RACE_RULES_5_5E = RACE_RULES_5E
+
+RULESET_RULES = {
+    '5e':   {'classes': CLASS_RULES_5E,   'races': RACE_RULES_5E},
+    '5.5e': {'classes': CLASS_RULES_5_5E, 'races': RACE_RULES_5_5E},
+    'other': None,
+}
+
+
+def _rules_for(ruleset):
+    return RULESET_RULES.get(ruleset)
+
+
+def character_rules(character):
+    """Resolve the active class/race rule blocks for this character.
+
+    Returns a dict with keys: class_rules, race_rules, allowed_skill_pool,
+    skill_pick_count, save_profs (derived from class), granted_skills,
+    granted_languages, granted_armor, granted_weapons, granted_tools, hit_die,
+    default_speed. Falls back gracefully when any piece is unknown.
+    """
+    rules = _rules_for(character.ruleset) or {'classes': {}, 'races': {}}
+    cls_rules = rules['classes'].get(character.character_class or '', None)
+    race_rules = rules['races'].get(character.race or '', None)
+
+    # Save profs come straight from class (or empty if unknown class).
+    save_profs = list(cls_rules['save_profs']) if cls_rules else []
+
+    # Skill pool: class's allowed list (or all 18 for Bard's '*').
+    if cls_rules:
+        if cls_rules['skill_choices'] == '*':
+            pool = list(SKILL_KEYS)
+        else:
+            pool = list(cls_rules['skill_choices'])
+        # Race fixed skills are always available even if not in class pool.
+        if race_rules:
+            for s in race_rules.get('fixed_skills', []):
+                if s not in pool:
+                    pool.append(s)
+        skill_pick_count = cls_rules['skill_count'] + (race_rules.get('extra_skills_count', 0) if race_rules else 0)
+    else:
+        # No class chosen — let any skill be selected, no count limit.
+        pool = list(SKILL_KEYS)
+        skill_pick_count = None
+
+    return {
+        'class_rules':       cls_rules,
+        'race_rules':        race_rules,
+        'allowed_skill_pool': pool,
+        'skill_pick_count':  skill_pick_count,
+        'save_profs':        save_profs,
+        'granted_skills':    list(race_rules.get('fixed_skills', [])) if race_rules else [],
+        'granted_languages': list(race_rules.get('languages', [])) if race_rules else [],
+        'granted_armor':     list(cls_rules.get('armor_profs', [])) if cls_rules else [],
+        'granted_weapons':   (list(cls_rules.get('weapon_profs', [])) if cls_rules else [])
+                             + (list(race_rules.get('weapon_profs', [])) if race_rules else []),
+        'granted_tools':     (list(cls_rules.get('tool_profs', [])) if cls_rules else [])
+                             + (list(race_rules.get('tool_profs', [])) if race_rules else []),
+        'hit_die':           cls_rules.get('hit_die') if cls_rules else '',
+        'default_speed':     race_rules.get('speed', 30) if race_rules else 30,
+    }
+
+
 def _can_view_character(character):
     """Owner OR campaign DM may see the sheet."""
     return (character.user_id == current_user.id
@@ -456,19 +667,48 @@ def character_view(character_id):
         flash('Thy sheet hath been inscribed.', 'success')
         return redirect(url_for('dnd.character_view', character_id=character.id))
 
+    # Resolve ruleset content (for dropdowns) and rule data (for constraints).
+    content = _ruleset_content(character.ruleset)
+    race_options = content['races'] if content else None
+    class_options = content['classes'] if content else None
+    rules = character_rules(character)
+
+    # When the class is known, save proficiencies are derived; storage may
+    # contain stale entries from before the user picked a class. Display only
+    # the derived set so the UI is always honest.
+    if rules['class_rules']:
+        display_save_profs = set(rules['save_profs'])
+    else:
+        display_save_profs = set(character.get_list('save_proficiencies'))
+
+    # Filter skill proficiencies to what's actually allowed for the character.
+    stored_skill_profs = set(character.get_list('skill_proficiencies'))
+    allowed_pool = set(rules['allowed_skill_pool'])
+    display_skill_profs = stored_skill_profs & allowed_pool
+    display_skill_experts = set(character.get_list('skill_expertise')) & display_skill_profs
+
     return render_template(
         'dnd/character_sheet.html',
         character=character, campaign=character.campaign,
         is_mine=is_mine, is_dm=is_dm, editable=editable,
         abilities=ABILITIES, skills=SKILLS, ability_shorts=ABILITY_SHORTS,
-        save_profs=set(character.get_list('save_proficiencies')),
-        skill_profs=set(character.get_list('skill_proficiencies')),
-        skill_experts=set(character.get_list('skill_expertise')),
+        save_profs=display_save_profs,
+        skill_profs=display_skill_profs,
+        skill_experts=display_skill_experts,
         languages=character.get_list('languages'),
         tool_profs=character.get_list('tool_proficiencies'),
         armor_profs=character.get_list('armor_proficiencies'),
         weapon_profs=character.get_list('weapon_proficiencies'),
         death_saves=character.get_map('death_saves') or {'successes': 0, 'failures': 0},
+        race_options=race_options, class_options=class_options,
+        rules=rules,
+        # JSON-serializable rule data for the JS layer so race/class changes
+        # can update constraints client-side without a page reload.
+        rule_data_json=json.dumps({
+            'classes': (RULESET_RULES.get(character.ruleset, {}) or {}).get('classes', {}),
+            'races':   (RULESET_RULES.get(character.ruleset, {}) or {}).get('races', {}),
+            'skill_keys': SKILL_KEYS,
+        }),
     )
 
 
@@ -515,23 +755,53 @@ def _apply_sheet_v1_update(character, form):
     fail = sum(1 for i in (1, 2, 3) if f'death_failure_{i}' in form)
     character.death_saves_json = json.dumps({'successes': succ, 'failures': fail})
 
-    # --- Saving throw proficiencies (checkboxes named save_prof_STR etc.)
-    save_profs = [s for s in ABILITY_SHORTS if f'save_prof_{s}' in form]
-    character.set_list('save_proficiencies', save_profs)
+    # --- Rule-derived values: race/class drive saves, skill pool, and granted profs.
+    # The user can't override save proficiencies — they come from class. If
+    # the class isn't recognized we fall back to whatever the form sent.
+    rules = character_rules(character)
+    if rules['class_rules']:
+        character.set_list('save_proficiencies', rules['save_profs'])
+    else:
+        save_profs = [s for s in ABILITY_SHORTS if f'save_prof_{s}' in form]
+        character.set_list('save_proficiencies', save_profs)
 
-    # --- Skills: proficiency + expertise checkboxes
-    skill_profs    = [k for k in SKILL_KEYS if f'skill_prof_{k}' in form]
-    skill_experts  = [k for k in SKILL_KEYS if f'skill_expert_{k}' in form]
-    # Expertise without proficiency is nonsensical — drop it.
-    skill_experts = [k for k in skill_experts if k in skill_profs]
-    character.set_list('skill_proficiencies', skill_profs)
-    character.set_list('skill_expertise', skill_experts)
+    # Skill proficiencies: filter to the allowed pool, clamp to max count.
+    raw_skill_profs = [k for k in SKILL_KEYS if f'skill_prof_{k}' in form]
+    allowed_pool = set(rules['allowed_skill_pool'])
+    valid_skill_profs = [k for k in raw_skill_profs if k in allowed_pool]
+    # Race-granted "fixed" skills are always included even if user unchecked.
+    for s in rules['granted_skills']:
+        if s not in valid_skill_profs:
+            valid_skill_profs.append(s)
+    # Enforce the class's pick count (granted skills don't count against it).
+    if rules['skill_pick_count'] is not None:
+        granted = set(rules['granted_skills'])
+        chosen = [s for s in valid_skill_profs if s not in granted]
+        if len(chosen) > rules['skill_pick_count']:
+            chosen = chosen[:rules['skill_pick_count']]
+        valid_skill_profs = sorted(set(chosen) | granted)
+    character.set_list('skill_proficiencies', valid_skill_profs)
 
-    # --- Lists (one per line in textareas)
-    character.set_list('languages',            _parse_lines(form.get('languages')))
-    character.set_list('tool_proficiencies',   _parse_lines(form.get('tool_proficiencies')))
-    character.set_list('armor_proficiencies',  _parse_lines(form.get('armor_proficiencies')))
-    character.set_list('weapon_proficiencies', _parse_lines(form.get('weapon_proficiencies')))
+    # Expertise: only valid if the skill is also proficient.
+    raw_experts = [k for k in SKILL_KEYS if f'skill_expert_{k}' in form]
+    valid_experts = [k for k in raw_experts if k in valid_skill_profs]
+    character.set_list('skill_expertise', valid_experts)
+
+    # --- Profs / languages: merge race+class grants with user's "additional" entries.
+    # The textarea only holds the user-added extras (granted items are displayed
+    # separately as a locked list); the saved column stores everything.
+    def _merge_granted(granted, raw):
+        seen, out = set(), []
+        for item in list(granted) + _parse_lines(raw):
+            if item and item not in seen:
+                seen.add(item)
+                out.append(item)
+        return out
+
+    character.set_list('languages',            _merge_granted(rules['granted_languages'], form.get('languages')))
+    character.set_list('tool_proficiencies',   _merge_granted(rules['granted_tools'],     form.get('tool_proficiencies')))
+    character.set_list('armor_proficiencies',  _merge_granted(rules['granted_armor'],     form.get('armor_proficiencies')))
+    character.set_list('weapon_proficiencies', _merge_granted(rules['granted_weapons'],   form.get('weapon_proficiencies')))
 
 
 @dnd_bp.route('/characters/<int:character_id>/delete', methods=['POST'])

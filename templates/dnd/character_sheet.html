@@ -97,22 +97,44 @@
             </label>
             <label class="sheet-field">
                 <span class="sheet-label">Race / Species</span>
+                {% if race_options %}
+                <select name="race" id="race-select" class="select-input"
+                        {% if not editable %}disabled{% endif %}>
+                    <option value="">&mdash; Choose &mdash;</option>
+                    {% for r in race_options %}
+                    <option value="{{ r }}" {% if character.race == r %}selected{% endif %}>{{ r }}</option>
+                    {% endfor %}
+                </select>
+                {% else %}
                 <input type="text" name="race" value="{{ character.race }}" maxlength="80"
                        {% if not editable %}readonly{% endif %}>
+                {% endif %}
             </label>
             <label class="sheet-field">
                 <span class="sheet-label">Subrace</span>
                 <input type="text" name="subrace" value="{{ character.subrace }}" maxlength="80"
+                       placeholder="e.g. Hill Dwarf, High Elf"
                        {% if not editable %}readonly{% endif %}>
             </label>
             <label class="sheet-field">
                 <span class="sheet-label">Class</span>
+                {% if class_options %}
+                <select name="character_class" id="class-select" class="select-input"
+                        {% if not editable %}disabled{% endif %}>
+                    <option value="">&mdash; Choose &mdash;</option>
+                    {% for c in class_options %}
+                    <option value="{{ c }}" {% if character.character_class == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+                {% else %}
                 <input type="text" name="character_class" value="{{ character.character_class }}" maxlength="80"
                        {% if not editable %}readonly{% endif %}>
+                {% endif %}
             </label>
             <label class="sheet-field">
                 <span class="sheet-label">Subclass</span>
                 <input type="text" name="subclass" value="{{ character.subclass }}" maxlength="80"
+                       placeholder="e.g. Champion, School of Evocation"
                        {% if not editable %}readonly{% endif %}>
             </label>
             <label class="sheet-field">
@@ -250,13 +272,20 @@
     {# ================================================================ SAVES #}
     <section id="sec-saves" class="sheet-section">
         <h2 class="sheet-section-title">Saving Throws</h2>
-        <ul class="save-list">
+        {% if rules.class_rules %}
+        <p class="rule-note">
+            Save proficiencies are determined by thy class
+            (<strong>{{ character.character_class }}</strong>):
+            {{ rules.save_profs | join(' & ') }}.
+        </p>
+        {% endif %}
+        <ul class="save-list" id="save-list">
             {% for col, short in abilities %}
-            <li class="save-row">
+            <li class="save-row" data-save-row="{{ short }}">
                 <label class="prof-checkbox" title="Proficient">
                     <input type="checkbox" name="save_prof_{{ short }}"
                            {% if short in save_profs %}checked{% endif %}
-                           {% if not editable %}disabled{% endif %}
+                           {% if not editable or rules.class_rules %}disabled{% endif %}
                            data-prof-for-save="{{ short }}">
                     <span></span>
                 </label>
@@ -272,13 +301,51 @@
     {# =============================================================== SKILLS #}
     <section id="sec-skills" class="sheet-section">
         <h2 class="sheet-section-title">Skills</h2>
-        <ul class="skill-list">
+        {% if rules.class_rules %}
+        <div class="rule-note skill-rule-note">
+            <p>
+                <strong>{{ character.character_class }}</strong> may choose
+                <strong id="skill-count-display">
+                    <span id="skill-chosen-count">0</span>
+                    / {{ rules.skill_pick_count }}
+                </strong>
+                skill{{ '' if rules.skill_pick_count == 1 else 's' }}
+                {% if rules.class_rules.skill_choices == '*' %}
+                of any kind.
+                {% else %}
+                from the available pool (dimmed skills are out-of-class).
+                {% endif %}
+            </p>
+            {% if rules.granted_skills %}
+            <p class="rule-note-sub">
+                Race-granted (always proficient):
+                <strong>
+                    {%- for s in rules.granted_skills -%}
+                        {%- for sk_key, sk_label, _ in skills if sk_key == s -%}
+                            {{ sk_label }}{% if not loop.last %}, {% endif %}
+                        {%- endfor -%}
+                        {%- if not loop.last %}, {% endif -%}
+                    {%- endfor -%}
+                </strong>
+            </p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <ul class="skill-list" id="skill-list">
             {% for key, label, ab in skills %}
-            <li class="skill-row">
-                <label class="prof-checkbox" title="Proficient">
+            {% set in_pool = (rules.allowed_skill_pool is none) or (key in rules.allowed_skill_pool) %}
+            {% set is_granted = key in rules.granted_skills %}
+            <li class="skill-row
+                {%- if not in_pool %} skill-row-locked{% endif %}
+                {%- if is_granted %} skill-row-granted{% endif %}"
+                data-skill-row="{{ key }}"
+                data-in-pool="{{ '1' if in_pool else '0' }}"
+                data-is-granted="{{ '1' if is_granted else '0' }}">
+                <label class="prof-checkbox" title="{% if is_granted %}Granted by race{% elif not in_pool %}Not available to this class{% else %}Proficient{% endif %}">
                     <input type="checkbox" name="skill_prof_{{ key }}"
                            {% if key in skill_profs %}checked{% endif %}
-                           {% if not editable %}disabled{% endif %}
+                           {% if not editable or not in_pool or is_granted %}disabled{% endif %}
                            data-prof-for-skill="{{ key }}">
                     <span></span>
                 </label>
@@ -291,6 +358,7 @@
                 </label>
                 <span class="skill-name">
                     {{ label }} <span class="skill-ability">({{ ab }})</span>
+                    {% if is_granted %}<span class="skill-tag">race</span>{% endif %}
                 </span>
                 <span class="skill-bonus" data-skill-bonus-for="{{ key }}" data-skill-ability="{{ ab }}">
                     {{ skill_total(key, ab, character, skill_profs, skill_experts) }}
@@ -303,27 +371,47 @@
     {# ========================================================= PROFICIENCIES #}
     <section id="sec-profs" class="sheet-section">
         <h2 class="sheet-section-title">Other Proficiencies &amp; Languages</h2>
+
+        {% macro granted_block(label, items) -%}
+            {% if items %}
+            <div class="granted-list">
+                <span class="sheet-label">Granted</span>
+                <ul>
+                    {% for it in items %}<li>{{ it }}</li>{% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        {%- endmacro %}
+
         <div class="sheet-grid two-col">
-            <label class="sheet-field">
-                <span class="sheet-label">Languages <em>(one per line)</em></span>
-                <textarea name="languages" rows="4" {% if not editable %}readonly{% endif %}
-                    >{{ languages | join('\n') }}</textarea>
-            </label>
-            <label class="sheet-field">
+            <div class="sheet-field">
+                <span class="sheet-label">Languages</span>
+                {{ granted_block('Languages', rules.granted_languages) }}
+                <span class="sheet-sub-label">Additional <em>(background, feats — one per line)</em></span>
+                <textarea name="languages" rows="3" {% if not editable %}readonly{% endif %}
+                    placeholder="e.g. Draconic, Sylvan">{{ languages | reject('in', rules.granted_languages) | join('\n') }}</textarea>
+            </div>
+            <div class="sheet-field">
                 <span class="sheet-label">Tool Proficiencies</span>
-                <textarea name="tool_proficiencies" rows="4" {% if not editable %}readonly{% endif %}
-                    >{{ tool_profs | join('\n') }}</textarea>
-            </label>
-            <label class="sheet-field">
+                {{ granted_block('Tools', rules.granted_tools) }}
+                <span class="sheet-sub-label">Additional</span>
+                <textarea name="tool_proficiencies" rows="3" {% if not editable %}readonly{% endif %}
+                    >{{ tool_profs | reject('in', rules.granted_tools) | join('\n') }}</textarea>
+            </div>
+            <div class="sheet-field">
                 <span class="sheet-label">Armor Proficiencies</span>
+                {{ granted_block('Armor', rules.granted_armor) }}
+                <span class="sheet-sub-label">Additional</span>
                 <textarea name="armor_proficiencies" rows="3" {% if not editable %}readonly{% endif %}
-                    >{{ armor_profs | join('\n') }}</textarea>
-            </label>
-            <label class="sheet-field">
+                    >{{ armor_profs | reject('in', rules.granted_armor) | join('\n') }}</textarea>
+            </div>
+            <div class="sheet-field">
                 <span class="sheet-label">Weapon Proficiencies</span>
+                {{ granted_block('Weapons', rules.granted_weapons) }}
+                <span class="sheet-sub-label">Additional</span>
                 <textarea name="weapon_proficiencies" rows="3" {% if not editable %}readonly{% endif %}
-                    >{{ weapon_profs | join('\n') }}</textarea>
-            </label>
+                    >{{ weapon_profs | reject('in', rules.granted_weapons) | join('\n') }}</textarea>
+            </div>
         </div>
     </section>
 
@@ -349,9 +437,27 @@
 {% endblock %}
 
 {% block scripts %}
+<script id="rule-data" type="application/json">{{ rule_data_json | safe }}</script>
 <script>
 (function () {
     'use strict';
+
+    // ---------- Rule data + helpers ----------
+    let RULE_DATA = {classes: {}, races: {}, skill_keys: []};
+    try {
+        RULE_DATA = JSON.parse(document.getElementById('rule-data').textContent);
+    } catch (e) { /* fall back to permissive defaults */ }
+
+    function currentClassRules() {
+        const sel = document.getElementById('class-select');
+        if (!sel) return null;
+        return RULE_DATA.classes[sel.value] || null;
+    }
+    function currentRaceRules() {
+        const sel = document.getElementById('race-select');
+        if (!sel) return null;
+        return RULE_DATA.races[sel.value] || null;
+    }
 
     function abilityMod(score) {
         const n = parseInt(score, 10);
@@ -463,7 +569,137 @@
         });
     });
 
+    // ---------- Class/race rule reactivity ----------
+
+    function applyClassRules() {
+        const cr = currentClassRules();
+        const rr = currentRaceRules();
+
+        // 1. Save proficiencies: lock to class's set when class is known.
+        const saveProfs = new Set(cr ? cr.save_profs : []);
+        document.querySelectorAll('input[data-prof-for-save]').forEach(input => {
+            const short = input.dataset.profForSave;
+            if (cr) {
+                input.checked = saveProfs.has(short);
+                input.disabled = true;
+            } else {
+                input.disabled = false;
+            }
+        });
+
+        // 2. Skills: enable only those in the class's pool (+ race fixed).
+        const pool = new Set();
+        if (cr) {
+            if (cr.skill_choices === '*') {
+                RULE_DATA.skill_keys.forEach(k => pool.add(k));
+            } else {
+                (cr.skill_choices || []).forEach(k => pool.add(k));
+            }
+        } else {
+            RULE_DATA.skill_keys.forEach(k => pool.add(k));
+        }
+        const granted = new Set((rr && rr.fixed_skills) || []);
+        granted.forEach(k => pool.add(k));
+
+        document.querySelectorAll('[data-skill-row]').forEach(row => {
+            const key = row.dataset.skillRow;
+            const inPool = pool.has(key);
+            const isGranted = granted.has(key);
+            row.dataset.inPool = inPool ? '1' : '0';
+            row.dataset.isGranted = isGranted ? '1' : '0';
+            row.classList.toggle('skill-row-locked', !inPool);
+            row.classList.toggle('skill-row-granted', isGranted);
+
+            const profInput   = row.querySelector('input[data-prof-for-skill]');
+            const expertInput = row.querySelector('input[data-expert-for-skill]');
+
+            if (isGranted) {
+                if (profInput) { profInput.checked = true; profInput.disabled = true; }
+            } else if (!inPool) {
+                if (profInput)   { profInput.checked = false; profInput.disabled = true; }
+                if (expertInput) { expertInput.checked = false; expertInput.disabled = true; }
+            } else {
+                if (profInput)   profInput.disabled = false;
+                if (expertInput) expertInput.disabled = false;
+            }
+
+            // Update the race tag visibility
+            const nameEl = row.querySelector('.skill-name');
+            if (nameEl) {
+                let tag = nameEl.querySelector('.skill-tag');
+                if (isGranted && !tag) {
+                    tag = document.createElement('span');
+                    tag.className = 'skill-tag';
+                    tag.textContent = 'race';
+                    nameEl.appendChild(tag);
+                } else if (!isGranted && tag) {
+                    tag.remove();
+                }
+            }
+        });
+
+        updateSkillCounter();
+    }
+
+    function updateSkillCounter() {
+        const cr = currentClassRules();
+        const display = document.getElementById('skill-count-display');
+        const chosenEl = document.getElementById('skill-chosen-count');
+        if (!display || !cr) return;
+
+        const rr = currentRaceRules();
+        const granted = new Set((rr && rr.fixed_skills) || []);
+        let chosen = 0;
+        document.querySelectorAll('input[data-prof-for-skill]:checked').forEach(input => {
+            const key = input.dataset.profForSkill;
+            if (!granted.has(key)) chosen += 1;
+        });
+
+        if (chosenEl) chosenEl.textContent = String(chosen);
+
+        const max = cr.skill_count + ((rr && rr.extra_skills_count) || 0);
+
+        // If we've hit the max, disable unchecked non-granted prof inputs.
+        const atMax = chosen >= max;
+        document.querySelectorAll('[data-skill-row]').forEach(row => {
+            const key = row.dataset.skillRow;
+            if (row.dataset.inPool !== '1') return;
+            if (row.dataset.isGranted === '1') return;
+            const input = row.querySelector('input[data-prof-for-skill]');
+            if (!input) return;
+            if (atMax && !input.checked) {
+                input.disabled = true;
+                row.classList.add('skill-row-capped');
+            } else {
+                input.disabled = false;
+                row.classList.remove('skill-row-capped');
+            }
+        });
+
+        // Update the "X / N" in the description (mainly the X — N is rendered server-side).
+        const totalSpan = display.querySelector(':scope > :nth-child(2)');
+        // (Span is "X / N" assembled in Jinja — we only mutate #skill-chosen-count.)
+    }
+
+    // Hook dropdowns
+    document.getElementById('class-select')?.addEventListener('change', () => {
+        applyClassRules();
+        recomputeAllDerived();
+    });
+    document.getElementById('race-select')?.addEventListener('change', () => {
+        applyClassRules();
+        recomputeAllDerived();
+    });
+
+    // Hook skill checkbox changes for the cap counter
+    document.querySelectorAll('input[data-prof-for-skill]').forEach(input => {
+        input.addEventListener('change', updateSkillCounter);
+    });
+
     // Initial computation on load (in case server values drifted from inputs).
+    // We DON'T call applyClassRules() on load because the server has already
+    // rendered the correct disabled states; doing so could clobber user edits.
+    updateSkillCounter();
     recomputeAllDerived();
 })();
 </script>
