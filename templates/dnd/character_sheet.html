@@ -167,12 +167,17 @@
         <div class="ability-grid">
             {% for col, short in abilities %}
             {% set score = character[col] %}
+            {% set race_bonus = (rules.race_rules.ability_bonuses[short] if rules.race_rules and rules.race_rules.get('ability_bonuses') and short in rules.race_rules.ability_bonuses else 0) %}
             <div class="ability-card" data-ability="{{ short }}">
                 <div class="ability-short">{{ short }}</div>
                 <input type="number" name="{{ col }}" class="ability-score" min="1" max="30"
                        value="{{ score }}"
                        {% if not editable %}readonly{% endif %}>
                 <div class="ability-mod" data-mod-for="{{ col }}">{{ ability_mod(score) }}</div>
+                <div class="ability-race-bonus" data-race-bonus-for="{{ short }}"
+                     {% if not race_bonus %}hidden{% endif %}>
+                    Race: <span data-race-bonus-value>{% if race_bonus > 0 %}+{% endif %}{{ race_bonus }}</span>
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -187,6 +192,7 @@
                 <span class="sheet-label">Armor Class</span>
                 <input type="number" name="armor_class" value="{{ character.armor_class }}" min="0" max="40"
                        {% if not editable %}readonly{% endif %}>
+                <div class="combat-card-hint" id="ac-hint" hidden></div>
             </div>
             <div class="combat-card">
                 <span class="sheet-label">Initiative</span>
@@ -195,8 +201,9 @@
             </div>
             <div class="combat-card">
                 <span class="sheet-label">Speed (ft)</span>
-                <input type="number" name="speed" value="{{ character.speed }}" min="0" max="200"
+                <input type="number" name="speed" id="speed-input" value="{{ character.speed }}" min="0" max="200"
                        {% if not editable %}readonly{% endif %}>
+                <div class="combat-card-hint" id="speed-hint" hidden></div>
             </div>
             <div class="combat-card">
                 <span class="sheet-label">Prof. Bonus</span>
@@ -229,10 +236,11 @@
                        {% if not editable %}readonly{% endif %}>
             </div>
             <div class="hp-card">
-                <span class="sheet-label">Hit Dice</span>
-                <input type="text" name="hit_dice" value="{{ character.hit_dice }}" maxlength="40"
-                       placeholder="e.g. 5d8"
-                       {% if not editable %}readonly{% endif %}>
+                <span class="sheet-label">Hit Dice <em>(class &times; level)</em></span>
+                <input type="text" name="hit_dice" id="hit-dice-input"
+                       value="{{ character.hit_dice }}" maxlength="40"
+                       placeholder="choose a class"
+                       readonly>
                 <div class="hit-dice-used">
                     Used:
                     <input type="number" name="hit_dice_used" value="{{ character.hit_dice_used }}"
@@ -272,13 +280,12 @@
     {# ================================================================ SAVES #}
     <section id="sec-saves" class="sheet-section">
         <h2 class="sheet-section-title">Saving Throws</h2>
-        {% if rules.class_rules %}
-        <p class="rule-note">
+        <p class="rule-note" id="save-rule-note"
+           {% if not rules.class_rules %}hidden{% endif %}>
             Save proficiencies are determined by thy class
-            (<strong>{{ character.character_class }}</strong>):
-            {{ rules.save_profs | join(' & ') }}.
+            (<strong id="save-rule-class">{{ character.character_class }}</strong>):
+            <span id="save-rule-list">{{ rules.save_profs | join(' & ') }}</span>.
         </p>
-        {% endif %}
         <ul class="save-list" id="save-list">
             {% for col, short in abilities %}
             <li class="save-row" data-save-row="{{ short }}">
@@ -301,25 +308,27 @@
     {# =============================================================== SKILLS #}
     <section id="sec-skills" class="sheet-section">
         <h2 class="sheet-section-title">Skills</h2>
-        {% if rules.class_rules %}
-        <div class="rule-note skill-rule-note">
+        <div class="rule-note skill-rule-note" id="skill-rule-note"
+             {% if not rules.class_rules %}hidden{% endif %}>
             <p>
-                <strong>{{ character.character_class }}</strong> may choose
+                <strong id="skill-rule-class">{{ character.character_class }}</strong> may choose
                 <strong id="skill-count-display">
                     <span id="skill-chosen-count">0</span>
-                    / {{ rules.skill_pick_count }}
+                    / <span id="skill-rule-max">{{ rules.skill_pick_count or '' }}</span>
                 </strong>
-                skill{{ '' if rules.skill_pick_count == 1 else 's' }}
-                {% if rules.class_rules.skill_choices == '*' %}
-                of any kind.
-                {% else %}
-                from the available pool (dimmed skills are out-of-class).
-                {% endif %}
+                <span id="skill-rule-noun">skill{{ '' if rules.skill_pick_count == 1 else 's' }}</span>
+                <span id="skill-rule-tail">
+                {%- if rules.class_rules and rules.class_rules.skill_choices == '*' -%}
+                    of any kind.
+                {%- else -%}
+                    from the available pool (dimmed skills are out-of-class).
+                {%- endif -%}
+                </span>
             </p>
-            {% if rules.granted_skills %}
-            <p class="rule-note-sub">
+            <p class="rule-note-sub" id="skill-rule-granted-line"
+               {% if not rules.granted_skills %}hidden{% endif %}>
                 Race-granted (always proficient):
-                <strong>
+                <strong id="skill-rule-granted">
                     {%- for s in rules.granted_skills -%}
                         {%- for sk_key, sk_label, _ in skills if sk_key == s -%}
                             {{ sk_label }}{% if not loop.last %}, {% endif %}
@@ -328,9 +337,7 @@
                     {%- endfor -%}
                 </strong>
             </p>
-            {% endif %}
         </div>
-        {% endif %}
 
         <ul class="skill-list" id="skill-list">
             {% for key, label, ab in skills %}
@@ -372,42 +379,40 @@
     <section id="sec-profs" class="sheet-section">
         <h2 class="sheet-section-title">Other Proficiencies &amp; Languages</h2>
 
-        {% macro granted_block(label, items) -%}
-            {% if items %}
-            <div class="granted-list">
+        {% macro granted_block(slot, items) -%}
+            <div class="granted-list" id="granted-{{ slot }}" {% if not items %}hidden{% endif %}>
                 <span class="sheet-label">Granted</span>
                 <ul>
                     {% for it in items %}<li>{{ it }}</li>{% endfor %}
                 </ul>
             </div>
-            {% endif %}
         {%- endmacro %}
 
         <div class="sheet-grid two-col">
             <div class="sheet-field">
                 <span class="sheet-label">Languages</span>
-                {{ granted_block('Languages', rules.granted_languages) }}
+                {{ granted_block('languages', rules.granted_languages) }}
                 <span class="sheet-sub-label">Additional <em>(background, feats — one per line)</em></span>
                 <textarea name="languages" rows="3" {% if not editable %}readonly{% endif %}
                     placeholder="e.g. Draconic, Sylvan">{{ languages | reject('in', rules.granted_languages) | join('\n') }}</textarea>
             </div>
             <div class="sheet-field">
                 <span class="sheet-label">Tool Proficiencies</span>
-                {{ granted_block('Tools', rules.granted_tools) }}
+                {{ granted_block('tools', rules.granted_tools) }}
                 <span class="sheet-sub-label">Additional</span>
                 <textarea name="tool_proficiencies" rows="3" {% if not editable %}readonly{% endif %}
                     >{{ tool_profs | reject('in', rules.granted_tools) | join('\n') }}</textarea>
             </div>
             <div class="sheet-field">
                 <span class="sheet-label">Armor Proficiencies</span>
-                {{ granted_block('Armor', rules.granted_armor) }}
+                {{ granted_block('armor', rules.granted_armor) }}
                 <span class="sheet-sub-label">Additional</span>
                 <textarea name="armor_proficiencies" rows="3" {% if not editable %}readonly{% endif %}
                     >{{ armor_profs | reject('in', rules.granted_armor) | join('\n') }}</textarea>
             </div>
             <div class="sheet-field">
                 <span class="sheet-label">Weapon Proficiencies</span>
-                {{ granted_block('Weapons', rules.granted_weapons) }}
+                {{ granted_block('weapons', rules.granted_weapons) }}
                 <span class="sheet-sub-label">Additional</span>
                 <textarea name="weapon_proficiencies" rows="3" {% if not editable %}readonly{% endif %}
                     >{{ weapon_profs | reject('in', rules.granted_weapons) | join('\n') }}</textarea>
@@ -535,6 +540,11 @@
         });
     });
 
+    // Ability score changes also need to refresh the AC unarmored hint.
+    ['strength','dexterity','constitution','intelligence','wisdom','charisma'].forEach(col => {
+        document.querySelector(`input[name="${col}"]`)?.addEventListener('input', updateAcHint);
+    });
+
     // "auto from level" toggle for prof bonus
     const autoCb = document.getElementById('prof-bonus-auto');
     const pbInput = document.getElementById('prof-bonus-input');
@@ -554,7 +564,11 @@
                 pbInput.value = profBonusFromLevel(levelInput.value);
                 recomputeAllDerived();
             }
+            updateHitDice();
         });
+    } else {
+        // Even without an auto-pb toggle (read-only mode), hit-dice should track level.
+        document.querySelector('input[name="level"]')?.addEventListener('input', updateHitDice);
     }
 
     // Expertise without proficiency is nonsense — auto-uncheck.
@@ -571,9 +585,25 @@
 
     // ---------- Class/race rule reactivity ----------
 
+    function updateHitDice() {
+        const cr = currentClassRules();
+        const levelInput = document.querySelector('input[name="level"]');
+        const hdInput = document.getElementById('hit-dice-input');
+        if (!hdInput) return;
+        if (!cr) {
+            hdInput.value = '';
+            return;
+        }
+        const level = Math.max(1, Math.min(20, parseInt(levelInput?.value, 10) || 1));
+        // cr.hit_die is stored as 'd6', 'd8', etc.
+        hdInput.value = `${level}${cr.hit_die}`;
+    }
+
     function applyClassRules() {
         const cr = currentClassRules();
         const rr = currentRaceRules();
+        const classSel = document.getElementById('class-select');
+        const className = classSel ? classSel.value : '';
 
         // 1. Save proficiencies: lock to class's set when class is known.
         const saveProfs = new Set(cr ? cr.save_profs : []);
@@ -586,6 +616,51 @@
                 input.disabled = false;
             }
         });
+
+        // Update saves banner text
+        const saveNote = document.getElementById('save-rule-note');
+        if (saveNote) {
+            if (cr) {
+                const classEl = document.getElementById('save-rule-class');
+                const listEl  = document.getElementById('save-rule-list');
+                if (classEl) classEl.textContent = className;
+                if (listEl)  listEl.textContent  = (cr.save_profs || []).join(' & ');
+                saveNote.hidden = false;
+            } else {
+                saveNote.hidden = true;
+            }
+        }
+
+        // Update skill banner text
+        const skillNote = document.getElementById('skill-rule-note');
+        if (skillNote) {
+            if (cr) {
+                const max = (cr.skill_count || 0) + ((rr && rr.extra_skills_count) || 0);
+                const skClass = document.getElementById('skill-rule-class');
+                const skMax   = document.getElementById('skill-rule-max');
+                const skNoun  = document.getElementById('skill-rule-noun');
+                const skTail  = document.getElementById('skill-rule-tail');
+                const skGrantedLine = document.getElementById('skill-rule-granted-line');
+                const skGranted = document.getElementById('skill-rule-granted');
+
+                if (skClass) skClass.textContent = className;
+                if (skMax)   skMax.textContent   = String(max);
+                if (skNoun)  skNoun.textContent  = (max === 1) ? 'skill' : 'skills';
+                if (skTail)  skTail.textContent  = (cr.skill_choices === '*')
+                    ? ' of any kind.'
+                    : ' from the available pool (dimmed skills are out-of-class).';
+
+                const granted = (rr && rr.fixed_skills) || [];
+                if (skGranted) {
+                    const labels = RULE_DATA.skill_labels || {};
+                    skGranted.textContent = granted.map(k => labels[k] || k).join(', ');
+                }
+                if (skGrantedLine) skGrantedLine.hidden = granted.length === 0;
+                skillNote.hidden = false;
+            } else {
+                skillNote.hidden = true;
+            }
+        }
 
         // 2. Skills: enable only those in the class's pool (+ race fixed).
         const pool = new Set();
@@ -639,6 +714,121 @@
         });
 
         updateSkillCounter();
+        updateHitDice();
+        updateSpeed();
+        updateAbilityBonusChips();
+        updateAcHint();
+        updateGrantedLists();
+    }
+
+    // Cache prior race default so we only auto-overwrite speed if the user
+    // hasn't customized it since the last race change.
+    let _lastRaceDefaultSpeed = null;
+    {
+        const rr0 = currentRaceRules();
+        _lastRaceDefaultSpeed = rr0 ? rr0.speed : null;
+    }
+
+    function updateSpeed() {
+        const rr = currentRaceRules();
+        const speedInput = document.getElementById('speed-input');
+        const hintEl = document.getElementById('speed-hint');
+        if (!speedInput) return;
+
+        if (rr && typeof rr.speed === 'number') {
+            // Only overwrite if it currently matches the previous race's default
+            // (so manual tweaks survive). On a fresh race change to a new value
+            // this happens naturally.
+            const currentVal = parseInt(speedInput.value, 10);
+            if (currentVal === _lastRaceDefaultSpeed || isNaN(currentVal)) {
+                speedInput.value = rr.speed;
+            }
+            _lastRaceDefaultSpeed = rr.speed;
+            if (hintEl) {
+                hintEl.textContent = `Race default: ${rr.speed} ft`;
+                hintEl.hidden = false;
+            }
+        } else {
+            if (hintEl) hintEl.hidden = true;
+        }
+    }
+
+    function updateAbilityBonusChips() {
+        const rr = currentRaceRules();
+        const bonuses = (rr && rr.ability_bonuses) || {};
+        document.querySelectorAll('[data-race-bonus-for]').forEach(el => {
+            const short = el.dataset.raceBonusFor;
+            const bonus = bonuses[short] || 0;
+            if (bonus) {
+                const valEl = el.querySelector('[data-race-bonus-value]');
+                if (valEl) valEl.textContent = (bonus > 0 ? '+' : '') + String(bonus);
+                el.hidden = false;
+            } else {
+                el.hidden = true;
+            }
+        });
+    }
+
+    function updateAcHint() {
+        const cr = currentClassRules();
+        const hint = document.getElementById('ac-hint');
+        if (!hint) return;
+        if (!cr || !cr.unarmored_ac || !cr.unarmored_ac.length) {
+            hint.hidden = true;
+            return;
+        }
+        // 10 + sum of the listed ability mods.
+        let total = 10;
+        const parts = ['10'];
+        cr.unarmored_ac.forEach(short => {
+            const mod = abilityMod(getAbilityScore(short));
+            total += mod;
+            parts.push(`${signed(mod)} ${short}`);
+        });
+        const classSel = document.getElementById('class-select');
+        const cname = classSel ? classSel.value : '';
+        hint.textContent = `${cname} unarmored: ${total} (${parts.join(' ')})`;
+        hint.hidden = false;
+    }
+
+    function _setGrantedList(slot, items) {
+        const block = document.getElementById(`granted-${slot}`);
+        if (!block) return;
+        if (!items || !items.length) {
+            block.hidden = true;
+            return;
+        }
+        const ul = block.querySelector('ul');
+        if (ul) ul.innerHTML = items.map(it => `<li>${escapeHtmlSheet(it)}</li>`).join('');
+        block.hidden = false;
+    }
+
+    function updateGrantedLists() {
+        const cr = currentClassRules();
+        const rr = currentRaceRules();
+        const langs   = (rr && rr.languages)    || [];
+        const armor   = (cr && cr.armor_profs)  || [];
+        const weapons = ((cr && cr.weapon_profs) || []).concat((rr && rr.weapon_profs) || []);
+        const tools   = ((cr && cr.tool_profs)   || []).concat((rr && rr.tool_profs)   || []);
+        _setGrantedList('languages', dedupe(langs));
+        _setGrantedList('armor',     dedupe(armor));
+        _setGrantedList('weapons',   dedupe(weapons));
+        _setGrantedList('tools',     dedupe(tools));
+    }
+
+    function dedupe(arr) {
+        const seen = new Set();
+        const out = [];
+        for (const item of arr) {
+            if (item && !seen.has(item)) { seen.add(item); out.push(item); }
+        }
+        return out;
+    }
+
+    function escapeHtmlSheet(str) {
+        return String(str ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
     }
 
     function updateSkillCounter() {
@@ -700,6 +890,8 @@
     // We DON'T call applyClassRules() on load because the server has already
     // rendered the correct disabled states; doing so could clobber user edits.
     updateSkillCounter();
+    updateHitDice();
+    updateAcHint();
     recomputeAllDerived();
 })();
 </script>

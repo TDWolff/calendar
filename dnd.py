@@ -115,6 +115,7 @@ CLASS_RULES_5E = {
         'weapon_profs':  ['Simple Weapons', 'Martial Weapons'],
         'tool_profs':    [],
         'hit_die':       'd12',
+        'unarmored_ac':  ['DEX', 'CON'],  # 10 + DEX + CON (Unarmored Defense)
     },
     'Bard': {
         'save_profs':    ['DEX', 'CHA'],
@@ -160,6 +161,7 @@ CLASS_RULES_5E = {
         'weapon_profs':  ['Simple Weapons', 'Shortswords'],
         'tool_profs':    ["One type of artisan's tools or one musical instrument"],
         'hit_die':       'd8',
+        'unarmored_ac':  ['DEX', 'WIS'],  # 10 + DEX + WIS (Unarmored Defense)
     },
     'Paladin': {
         'save_profs':    ['WIS', 'CHA'],
@@ -232,19 +234,21 @@ CLASS_RULES_5E = {
 # `extra_skills_count` = race-granted skill choices (e.g. Half-Elf picks 2).
 # `fixed_skills` = automatic skill proficiencies the race always grants.
 RACE_RULES_5E = {
-    'Dragonborn': {'languages': ['Common', 'Draconic'], 'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
-    'Dwarf':      {'languages': ['Common', 'Dwarvish'], 'speed': 25, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': ['Battleaxe', 'Handaxe', 'Light Hammer', 'Warhammer'], 'tool_profs': ["One artisan's tool (Smith's, Brewer's, or Mason's)"]},
-    'Elf':        {'languages': ['Common', 'Elvish'],   'speed': 30, 'fixed_skills': ['perception'], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
-    'Gnome':      {'languages': ['Common', 'Gnomish'],  'speed': 25, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
-    'Half-Elf':   {'languages': ['Common', 'Elvish'],   'speed': 30, 'fixed_skills': [], 'extra_skills_count': 2, 'weapon_profs': [], 'tool_profs': []},
-    'Half-Orc':   {'languages': ['Common', 'Orc'],      'speed': 30, 'fixed_skills': ['intimidation'], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
-    'Halfling':   {'languages': ['Common', 'Halfling'], 'speed': 25, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
-    'Human':      {'languages': ['Common'],             'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
-    'Tiefling':   {'languages': ['Common', 'Infernal'], 'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
-    # 5.5e additions
-    'Aasimar':    {'languages': ['Common', 'Celestial'],'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
-    'Goliath':    {'languages': ['Common', 'Giant'],    'speed': 35, 'fixed_skills': ['athletics'], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
-    'Orc':        {'languages': ['Common', 'Orc'],      'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': []},
+    'Dragonborn': {'languages': ['Common', 'Draconic'], 'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': [], 'ability_bonuses': {'STR': 2, 'CHA': 1}},
+    'Dwarf':      {'languages': ['Common', 'Dwarvish'], 'speed': 25, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': ['Battleaxe', 'Handaxe', 'Light Hammer', 'Warhammer'], 'tool_profs': ["One artisan's tool (Smith's, Brewer's, or Mason's)"], 'ability_bonuses': {'CON': 2}},
+    'Elf':        {'languages': ['Common', 'Elvish'],   'speed': 30, 'fixed_skills': ['perception'], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': [], 'ability_bonuses': {'DEX': 2}},
+    'Gnome':      {'languages': ['Common', 'Gnomish'],  'speed': 25, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': [], 'ability_bonuses': {'INT': 2}},
+    'Half-Elf':   {'languages': ['Common', 'Elvish'],   'speed': 30, 'fixed_skills': [], 'extra_skills_count': 2, 'weapon_profs': [], 'tool_profs': [], 'ability_bonuses': {'CHA': 2}},
+    'Half-Orc':   {'languages': ['Common', 'Orc'],      'speed': 30, 'fixed_skills': ['intimidation'], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': [], 'ability_bonuses': {'STR': 2, 'CON': 1}},
+    'Halfling':   {'languages': ['Common', 'Halfling'], 'speed': 25, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': [], 'ability_bonuses': {'DEX': 2}},
+    'Human':      {'languages': ['Common'],             'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': [], 'ability_bonuses': {'STR': 1, 'DEX': 1, 'CON': 1, 'INT': 1, 'WIS': 1, 'CHA': 1}},
+    'Tiefling':   {'languages': ['Common', 'Infernal'], 'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': [], 'ability_bonuses': {'INT': 1, 'CHA': 2}},
+    # 5.5e-flavored entries — ability_bonuses present for 5e fallback if the
+    # campaign is 5e but the player picks one of these; the JSON embed strips
+    # them when ruleset is 5.5e per the 2024 PHB rules.
+    'Aasimar':    {'languages': ['Common', 'Celestial'],'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': [], 'ability_bonuses': {}},
+    'Goliath':    {'languages': ['Common', 'Giant'],    'speed': 35, 'fixed_skills': ['athletics'], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': [], 'ability_bonuses': {'STR': 2, 'CON': 1}},
+    'Orc':        {'languages': ['Common', 'Orc'],      'speed': 30, 'fixed_skills': [], 'extra_skills_count': 0, 'weapon_profs': [], 'tool_profs': [], 'ability_bonuses': {'STR': 2, 'CON': 1}},
 }
 
 # 5.5e class rules are functionally identical to 5e for the proficiency-picker
@@ -262,6 +266,24 @@ RULESET_RULES = {
 
 def _rules_for(ruleset):
     return RULESET_RULES.get(ruleset)
+
+
+def _embedded_rule_data(ruleset):
+    """Build the JSON-serializable rule blob the sheet JS reads on load.
+    Strips race ability_bonuses for 5.5e since 2024 species don't grant ASIs."""
+    base = RULESET_RULES.get(ruleset) or {'classes': {}, 'races': {}}
+    classes = base.get('classes', {}) or {}
+    races = base.get('races', {}) or {}
+    if ruleset == '5.5e':
+        races = {name: {k: v for k, v in r.items() if k != 'ability_bonuses'}
+                 for name, r in races.items()}
+    return {
+        'ruleset': ruleset,
+        'classes': classes,
+        'races': races,
+        'skill_keys': SKILL_KEYS,
+        'skill_labels': {k: lbl for k, lbl, _ in SKILLS},
+    }
 
 
 def character_rules(character):
@@ -704,11 +726,7 @@ def character_view(character_id):
         rules=rules,
         # JSON-serializable rule data for the JS layer so race/class changes
         # can update constraints client-side without a page reload.
-        rule_data_json=json.dumps({
-            'classes': (RULESET_RULES.get(character.ruleset, {}) or {}).get('classes', {}),
-            'races':   (RULESET_RULES.get(character.ruleset, {}) or {}).get('races', {}),
-            'skill_keys': SKILL_KEYS,
-        }),
+        rule_data_json=json.dumps(_embedded_rule_data(character.ruleset)),
     )
 
 
@@ -747,7 +765,13 @@ def _apply_sheet_v1_update(character, form):
     else:
         character.proficiency_bonus = _clamp_int(pb_override, 1, 12, character.proficiency_bonus_from_level)
 
-    character.hit_dice      = (form.get('hit_dice') or character.hit_dice or '').strip()[:40]
+    # Hit dice = <level>d<class hit die>. If the class is unknown we accept
+    # whatever was in the form (legacy/manual entry).
+    _rules_for_hd = character_rules(character)
+    if _rules_for_hd['hit_die']:
+        character.hit_dice = f"{character.level}{_rules_for_hd['hit_die']}"
+    else:
+        character.hit_dice = (form.get('hit_dice') or character.hit_dice or '').strip()[:40]
     character.hit_dice_used = _clamp_int(form.get('hit_dice_used'), 0, 40, 0)
 
     # Death saves (3 checkboxes each)
