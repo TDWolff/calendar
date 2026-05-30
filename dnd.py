@@ -21,17 +21,33 @@ ABS_LEVEL_MAX = 20
 # dropdown stays tractable; expansions can be added later.
 RULESET_CONTENT = {
     '5e': {
+        # Every race / lineage from the official 5e (2014) hardcovers, Plane Shift-adjacent
+        # promo PDFs, and standalone releases (Tortle Package, Locathah Rising, Acq. Inc.,
+        # Wayfinder's, Eberron, Ravnica, Theros, Strixhaven, Spelljammer, VRGtR, Dragonlance,
+        # Witchlight). Subraces that are commonly chosen as standalone in later books
+        # (Astral Elf, Eladrin, Sea Elf, Shadar-kai) are listed at the top level for
+        # convenience.
         'races': [
-            'Dragonborn', 'Dwarf', 'Elf', 'Gnome', 'Half-Elf', 'Half-Orc',
-            'Halfling', 'Human', 'Tiefling',
+            'Aarakocra', 'Aasimar', 'Astral Elf', 'Autognome', 'Bugbear', 'Centaur',
+            'Changeling', 'Dhampir', 'Dragonborn', 'Dwarf', 'Eladrin', 'Elf',
+            'Fairy', 'Firbolg', 'Genasi', 'Giff', 'Githyanki', 'Githzerai', 'Gnome',
+            'Goblin', 'Goliath', 'Grung', 'Hadozee', 'Half-Elf', 'Half-Orc',
+            'Halfling', 'Harengon', 'Hexblood', 'Hobgoblin', 'Human', 'Kalashtar',
+            'Kender', 'Kenku', 'Kobold', 'Leonin', 'Lizardfolk', 'Locathah',
+            'Loxodon', 'Minotaur', 'Orc', 'Owlin', 'Plasmoid', 'Reborn', 'Satyr',
+            'Sea Elf', 'Shadar-kai', 'Shifter', 'Simic Hybrid', 'Tabaxi',
+            'Thri-kreen', 'Tiefling', 'Tortle', 'Triton', 'Vedalken', 'Verdan',
+            'Warforged', 'Yuan-ti',
         ],
         'classes': [
             'Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk',
             'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard',
+            'Artificer',
         ],
     },
     '5.5e': {
-        # 2024 PHB calls them "species" but the model column is still race.
+        # 2024 PHB species. 5.5e calls them "species" but the model column is
+        # still `race` to keep the schema stable across rulesets.
         'races': [
             'Aasimar', 'Dragonborn', 'Dwarf', 'Elf', 'Gnome', 'Goliath',
             'Halfling', 'Human', 'Orc', 'Tiefling',
@@ -131,8 +147,16 @@ def campaign_new():
             )
             db.session.add(campaign)
             db.session.flush()
-            # Auto-add DM as a member so list/permission queries are uniform
-            db.session.add(CampaignMember(campaign_id=campaign.id, user_id=current_user.id))
+            # Auto-add DM as a member so list/permission queries are uniform.
+            # Idempotent in case a stale row already exists (e.g. from a
+            # prior deploy where the user joined this campaign id manually).
+            existing_member = CampaignMember.query.filter_by(
+                campaign_id=campaign.id, user_id=current_user.id
+            ).first()
+            if not existing_member:
+                db.session.add(CampaignMember(
+                    campaign_id=campaign.id, user_id=current_user.id,
+                ))
             db.session.commit()
             return redirect(url_for('dnd.campaign_detail', campaign_id=campaign.id))
 

@@ -3,11 +3,27 @@ import secrets
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from sqlalchemy import UniqueConstraint, text
+from sqlalchemy import UniqueConstraint, text, event
+from sqlalchemy.engine import Engine
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
 db = SQLAlchemy()
+
+
+# SQLite does NOT enforce FOREIGN KEY constraints unless explicitly told to.
+# Without this, ON DELETE CASCADE silently does nothing and `db.session.delete()`
+# on a parent row leaves orphan children behind.
+@event.listens_for(Engine, 'connect')
+def _enable_sqlite_foreign_keys(dbapi_connection, _connection_record):
+    # `dbapi_connection` for non-SQLite engines won't accept this pragma; guard
+    # so this is a no-op on Postgres/MySQL if we ever switch backends.
+    try:
+        cursor = dbapi_connection.cursor()
+        cursor.execute('PRAGMA foreign_keys=ON')
+        cursor.close()
+    except Exception:
+        pass
 
 
 VALID_STATUSES = {'session', 'busy', 'tentative', 'available'}
